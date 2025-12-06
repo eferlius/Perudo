@@ -86,6 +86,34 @@
                 transform: translateY(-100px) rotate(360deg);
             }
         }
+        
+        .desktop-nav {
+            display: none;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--color-border);
+        }
+        
+        .desktop-nav button {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: none;
+            background: none;
+            color: var(--color-text-light);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .desktop-nav button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+        
+        .desktop-nav button:hover {
+            color: var(--color-primary);
+        }
 
         header {
             background: linear-gradient(135deg, var(--color-primary) 0%, #1f5a52 100%);
@@ -150,6 +178,7 @@
             left: 0;
             right: 0;
             display: flex;
+            align-items: flex-end;
             background-color: white;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
@@ -173,9 +202,31 @@
             gap: 4px;
         }
         
+        .nav-tabs button[data-tab="home"] {
+            flex: 1.5;
+            font-size: 32px;
+            padding: 12px 8px;
+            margin: 0 8px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1f5a52 100%);
+            color: white;
+            box-shadow: 0 4px 8px rgba(43, 122, 111, 0.3);
+            border-radius: 16px;
+            transform: translateY(-8px);
+        }
+        
+        .nav-tabs button[data-tab="home"].active {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1f5a52 100%);
+            color: white;
+        }
+        
         .nav-tabs button span {
             font-size: 10px;
             font-weight: 500;
+        }
+        
+        .nav-tabs button[data-tab="home"] span {
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .nav-tabs button.active {
@@ -185,6 +236,10 @@
         
         .nav-tabs button:active {
             transform: scale(0.95);
+        }
+        
+        .nav-tabs button[data-tab="home"]:active {
+            transform: translateY(-8px) scale(0.95);
         }
 
         .tab-content {
@@ -642,6 +697,11 @@
         .chart-wrapper {
             position: relative;
             height: 300px;
+            width: 100%;
+        }
+        
+        .chart-wrapper canvas {
+            max-width: 100%;
         }
         
         .podium-grid {
@@ -697,6 +757,36 @@
             font-weight: 600;
         }
 
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .chart-wrapper {
+                height: 350px;
+            }
+            
+            .podium-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .nav-tabs {
+                display: none;
+            }
+            
+            .desktop-nav {
+                display: flex;
+            }
+            
+            .container {
+                padding-bottom: var(--spacing-lg);
+            }
+        }
+
         @media (max-width: 600px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -735,15 +825,28 @@
             <h1>🎲 Perudo Leaderboard</h1>
             <div class="sync-status" id="syncStatus">Connessione...</div>
         </header>
+        
+        <!-- Desktop Navigation -->
+        <div class="desktop-nav">
+            <button class="tab-btn-desktop active" data-tab="home">🏠 Home</button>
+            <button class="tab-btn-desktop" data-tab="nuova-partita">➕ Nuova Partita</button>
+            <button class="tab-btn-desktop" data-tab="classifica">🏆 Classifica</button>
+            <button class="tab-btn-desktop" data-tab="storico">📜 Storico</button>
+            <button class="tab-btn-desktop" data-tab="giocatori">👥 Giocatori</button>
+        </div>
 
-        <div class="nav-tabs">
-            <button class="tab-btn active" data-tab="home">
-                🏠
-                <span>Home</span>
-            </button>
+        <!-- Mobile Navigation -->        <div class="nav-tabs">
             <button class="tab-btn" data-tab="nuova-partita">
                 ➕
                 <span>Nuova</span>
+            </button>
+            <button class="tab-btn" data-tab="giocatori">
+                👥
+                <span>Giocatori</span>
+            </button>
+            <button class="tab-btn active" data-tab="home">
+                🏠
+                <span>Home</span>
             </button>
             <button class="tab-btn" data-tab="classifica">
                 🏆
@@ -752,10 +855,6 @@
             <button class="tab-btn" data-tab="storico">
                 📜
                 <span>Storico</span>
-            </button>
-            <button class="tab-btn" data-tab="giocatori">
-                👥
-                <span>Giocatori</span>
             </button>
         </div>
 
@@ -989,9 +1088,9 @@
         }
 
         // Tab navigation
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        document.querySelectorAll('.tab-btn, .tab-btn-desktop').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-btn, .tab-btn-desktop').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 e.target.classList.add('active');
                 const tabId = e.target.getAttribute('data-tab');
