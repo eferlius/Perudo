@@ -204,14 +204,15 @@
         
         .nav-tabs button[data-tab="home"] {
             flex: 1.5;
-            font-size: 32px;
-            padding: 12px 8px;
+            font-size: 36px;
+            padding: 16px 12px;
             margin: 0 8px;
             background: linear-gradient(135deg, var(--color-primary) 0%, #1f5a52 100%);
             color: white;
-            box-shadow: 0 4px 8px rgba(43, 122, 111, 0.3);
-            border-radius: 16px;
-            transform: translateY(-8px);
+            box-shadow: 0 -4px 12px rgba(43, 122, 111, 0.4);
+            border-radius: 20px 20px 16px 16px;
+            transform: translateY(-24px);
+            position: relative;
         }
         
         .nav-tabs button[data-tab="home"].active {
@@ -239,7 +240,7 @@
         }
         
         .nav-tabs button[data-tab="home"]:active {
-            transform: translateY(-8px) scale(0.95);
+            transform: translateY(-24px) scale(0.95);
         }
 
         .tab-content {
