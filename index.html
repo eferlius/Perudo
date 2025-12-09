@@ -1103,45 +1103,25 @@
             list.innerHTML = players.map(player => `
                 <div class="player-item">
                     <div class="player-input-wrapper">
-                        <input 
-                            type="text" 
-                            placeholder="Nome giocatore" 
-                            value="${player.name}"
+                        <select 
                             data-player-id="${player.id}"
-                            class="player-name-input"
-                            autocomplete="off"
-                        />
-                        <div class="player-suggestions" data-player-id="${player.id}"></div>
+                            class="player-name-select"
+                        >
+                            <option value="">Seleziona giocatore...</option>
+                            ${savedPlayerNames.map(name => `
+                                <option value="${name}" ${player.name === name ? 'selected' : ''}>${name}</option>
+                            `).join('')}
+                        </select>
                     </div>
                     <button type="button" data-player-id="${player.id}" class="player-remove-btn">Rimuovi</button>
                 </div>
             `).join('');
             
-            // Attach event listeners for name inputs
-            document.querySelectorAll('.player-name-input').forEach(input => {
-                const playerId = parseInt(input.dataset.playerId);
-                const suggestionsDiv = document.querySelector(`.player-suggestions[data-player-id="${playerId}"]`);
-                
-                // Show suggestions on focus
-                input.addEventListener('focus', function() {
-                    showSuggestions(playerId, this.value);
-                });
-                
-                // Filter suggestions on input
-                input.addEventListener('input', function() {
-                    showSuggestions(playerId, this.value);
-                });
-                
-                // Update player name on change
-                input.addEventListener('change', function() {
+            // Attach event listeners for select dropdowns
+            document.querySelectorAll('.player-name-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const playerId = parseInt(this.dataset.playerId);
                     updatePlayerName(playerId, this.value);
-                });
-                
-                // Hide suggestions on blur (with delay for click)
-                input.addEventListener('blur', function() {
-                    setTimeout(() => {
-                        suggestionsDiv.classList.remove('show');
-                    }, 200);
                 });
             });
             
@@ -1157,52 +1137,11 @@
             
             renderResults();
         }
-        
-        function showSuggestions(playerId, filter) {
-            const suggestionsDiv = document.querySelector(`.player-suggestions[data-player-id="${playerId}"]`);
-            
-            if (!suggestionsDiv) return;
-            
-            const filtered = savedPlayerNames.filter(name => 
-                name.toLowerCase().includes(filter.toLowerCase())
-            );
-            
-            if (filtered.length === 0) {
-                suggestionsDiv.classList.remove('show');
-                return;
-            }
-            
-            suggestionsDiv.innerHTML = filtered.map(name => `
-                <div class="suggestion-item" data-name="${name}">${name}</div>
-            `).join('');
-            
-            // Add click handlers to suggestions
-            suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const selectedName = this.dataset.name;
-                    const input = document.querySelector(`.player-name-input[data-player-id="${playerId}"]`);
-                    input.value = selectedName;
-                    updatePlayerName(playerId, selectedName);
-                    suggestionsDiv.classList.remove('show');
-                });
-            });
-            
-            suggestionsDiv.classList.add('show');
-        }
 
         function updatePlayerName(id, name) {
             const player = players.find(p => p.id === id);
             if (player) player.name = name;
-            
-            // Add name to saved names if not already present
-            if (name && name.trim() && !savedPlayerNames.includes(name.trim())) {
-                savedPlayerNames.push(name.trim());
-                savedPlayerNames.sort();
-                savePlayerNamesToStorage();
-                renderPlayerInputs(); // Re-render to update datalist
-            } else {
-                renderResults();
-            }
+            renderResults();
         }
 
         // Results management
@@ -1213,65 +1152,111 @@
                 return;
             }
 
-            resultsList.innerHTML = players.map((player, index) => `
+            resultsList.innerHTML = `
                 <div class="result-item">
-                    <h4>${index + 1}. ${player.name || 'Giocatore ' + (index + 1)}</h4>
+                    <h4>🥇 Vincitore (1° posto)</h4>
                     <div class="result-form-row">
                         <div class="form-group">
-                            <label>Posizione finale</label>
-                            <input 
-                                type="number" 
-                                min="1" 
-                                max="${players.length}"
-                                placeholder="Posizione"
-                                id="pos-${player.id}"
-                                class="position-input"
-                                data-player-id="${player.id}"
-                            />
+                            <label>Giocatore</label>
+                            <select id="winner-select" class="winner-select">
+                                <option value="">Seleziona vincitore...</option>
+                                ${players.map(p => `<option value="${p.id}">${p.name || 'Giocatore'}</option>`).join('')}
+                            </select>
                         </div>
-                        <div class="form-group" id="nds-group-${player.id}">
-                            <label>Dadi alla sconfitta (nds)</label>
+                        <div class="form-group">
+                            <label>Dadi alla vittoria</label>
                             <input 
                                 type="number" 
                                 min="0" 
                                 max="5"
                                 placeholder="Dadi"
-                                id="nds-${player.id}"
-                            />
-                        </div>
-                        <div class="form-group" id="ndv-group-${player.id}" style="display: none;">
-                            <label>Dadi alla vittoria (ndv)</label>
-                            <input 
-                                type="number" 
-                                min="0" 
-                                max="5"
-                                placeholder="Dadi"
-                                id="ndv-${player.id}"
+                                id="winner-dice"
                             />
                         </div>
                     </div>
                 </div>
-            `).join('');
+                <div class="result-item">
+                    <h4>🥈 Secondo posto</h4>
+                    <div class="result-form-row">
+                        <div class="form-group">
+                            <label>Giocatore</label>
+                            <select id="second-select" class="second-select">
+                                <option value="">Seleziona secondo...</option>
+                                ${players.map(p => `<option value="${p.id}">${p.name || 'Giocatore'}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Dadi rimanenti</label>
+                            <input 
+                                type="number" 
+                                min="0" 
+                                max="5"
+                                placeholder="Dadi"
+                                id="second-dice"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div id="other-players-container"></div>
+            `;
             
-            // Attach event listeners to position inputs
-            document.querySelectorAll('.position-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    const playerId = this.dataset.playerId;
-                    const position = parseInt(this.value);
-                    const ndsGroup = document.getElementById(`nds-group-${playerId}`);
-                    const ndvGroup = document.getElementById(`ndv-group-${playerId}`);
-                    
-                    if (position === 1) {
-                        ndsGroup.style.display = 'none';
-                        ndvGroup.style.display = 'block';
-                        document.getElementById(`nds-${playerId}`).value = '';
-                    } else {
-                        ndsGroup.style.display = 'block';
-                        ndvGroup.style.display = 'none';
-                        document.getElementById(`ndv-${playerId}`).value = '';
-                    }
-                });
-            });
+            // Add event listeners to update other players list
+            document.getElementById('winner-select')?.addEventListener('change', updateOtherPlayersList);
+            document.getElementById('second-select')?.addEventListener('change', updateOtherPlayersList);
+            
+            updateOtherPlayersList();
+        }
+        
+        function updateOtherPlayersList() {
+            const winnerId = parseInt(document.getElementById('winner-select')?.value);
+            const secondId = parseInt(document.getElementById('second-select')?.value);
+            const container = document.getElementById('other-players-container');
+            
+            if (!container) return;
+            
+            // Numero di altri giocatori = totale - 2 (primo e secondo)
+            const otherPlayersCount = Math.max(0, players.length - 2);
+            
+            if (otherPlayersCount === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            // Crea un array di indici per generare il numero corretto di righe
+            const indices = Array.from({ length: otherPlayersCount }, (_, i) => i);
+            
+            container.innerHTML = `
+                <div class="result-item" style="background-color: #fff9e6; border-left-color: #f39c12;">
+                    <h4>Altri giocatori (${otherPlayersCount} ${otherPlayersCount === 1 ? 'giocatore' : 'giocatori'})</h4>
+                    ${indices.map((index) => `
+                        <div style="margin-bottom: ${index < otherPlayersCount - 1 ? '12px' : '0'}; padding-bottom: ${index < otherPlayersCount - 1 ? '12px' : '0'}; border-bottom: ${index < otherPlayersCount - 1 ? '1px solid #eee' : 'none'};">
+                            <div class="result-form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label>Giocatore</label>
+                                    <select id="other-player-${index}" class="other-player-select">
+                                        <option value="">Seleziona...</option>
+                                        ${players
+                                            .filter(p => p.id !== winnerId && p.id !== secondId)
+                                            .map(p => `<option value="${p.id}">${p.name || 'Giocatore'}</option>`)
+                                            .join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label>Dadi</label>
+                                    <input 
+                                        type="number" 
+                                        min="0" 
+                                        max="5"
+                                        placeholder="Dadi"
+                                        id="other-dice-${index}"
+                                        class="other-player-dice"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         // Points calculation
@@ -1310,40 +1295,95 @@
             const ng = players.length;
             let hasError = false;
 
-            players.forEach(player => {
-                const pos = parseInt(document.getElementById(`pos-${player.id}`).value);
-                const ndsValue = document.getElementById(`nds-${player.id}`).value;
-                const ndvValue = document.getElementById(`ndv-${player.id}`).value;
+            // Get winner and second place
+            const winnerId = parseInt(document.getElementById('winner-select').value);
+            const secondId = parseInt(document.getElementById('second-select').value);
+            const winnerDice = parseInt(document.getElementById('winner-dice').value);
+            const secondDice = parseInt(document.getElementById('second-dice').value);
+            
+            if (!winnerId || !secondId || isNaN(winnerDice) || isNaN(secondDice)) {
+                hasError = true;
+            }
+            
+            if (winnerId === secondId) {
+                showAlert('Il vincitore e il secondo posto devono essere giocatori diversi', 'error');
+                return;
+            }
+            
+            if (hasError) {
+                showAlert('Completa tutti i campi per il vincitore e il secondo posto', 'error');
+                return;
+            }
+            
+            // Collect other players' data
+            const otherPlayersCount = players.length - 2; // Escludi vincitore e secondo
+            const otherPlayersData = [];
+            
+            for (let i = 0; i < otherPlayersCount; i++) {
+                const playerId = parseInt(document.getElementById(`other-player-${i}`)?.value);
+                const dice = parseInt(document.getElementById(`other-dice-${i}`)?.value);
                 
-                const isWinner = pos === 1;
-                const nds = isWinner ? 0 : parseInt(ndsValue);
-                const ndv = isWinner ? parseInt(ndvValue) : 0;
-
-                if (isNaN(pos)) {
+                if (!playerId || isNaN(dice)) {
                     hasError = true;
-                    return;
+                } else {
+                    otherPlayersData.push({ playerId, dice });
                 }
+            }
+            
+            if (hasError) {
+                showAlert('Completa tutti i campi per tutti i giocatori', 'error');
+                return;
+            }
+            
+            // Verifica che non ci siano duplicati
+            const allSelectedIds = [winnerId, secondId, ...otherPlayersData.map(p => p.playerId)];
+            const uniqueIds = new Set(allSelectedIds);
+            if (uniqueIds.size !== allSelectedIds.length) {
+                showAlert('Ogni giocatore può essere selezionato una sola volta', 'error');
+                return;
+            }
+            
+            // Sort other players by dice count to assign positions (meno dadi = posizione migliore)
+            const otherPlayers = otherPlayersData.sort((a, b) => a.dice - b.dice);
+            
+            // Create results for all players
+            // Winner
+            const winnerPlayer = players.find(p => p.id === winnerId);
+            gameResults.push({
+                playerId: winnerId,
+                playerName: winnerPlayer.name,
+                position: 1,
+                nds: 0,
+                ndv: winnerDice,
+                points: calculatePoints(1, ng, 0, winnerDice, true),
+                isWinner: true
+            });
+            
+            // Second place
+            const secondPlayer = players.find(p => p.id === secondId);
+            gameResults.push({
+                playerId: secondId,
+                playerName: secondPlayer.name,
+                position: 2,
+                nds: secondDice,
+                ndv: 0,
+                points: calculatePoints(2, ng, secondDice, 0, false),
+                isWinner: false
+            });
+            
+            // Other players (sorted by dice, ascending = better position)
+            otherPlayers.forEach((playerData, index) => {
+                const player = players.find(p => p.id === playerData.playerId);
+                const position = 3 + index;
                 
-                if (isWinner && isNaN(ndv)) {
-                    hasError = true;
-                    return;
-                }
-                
-                if (!isWinner && isNaN(nds)) {
-                    hasError = true;
-                    return;
-                }
-
-                const points = calculatePoints(pos, ng, nds, ndv, isWinner);
-
                 gameResults.push({
-                    playerId: player.id,
+                    playerId: playerData.playerId,
                     playerName: player.name,
-                    position: pos,
-                    nds: nds,
-                    ndv: ndv,
-                    points: points,
-                    isWinner: isWinner
+                    position: position,
+                    nds: playerData.dice,
+                    ndv: 0,
+                    points: calculatePoints(position, ng, playerData.dice, 0, false),
+                    isWinner: false
                 });
             });
 
@@ -1658,21 +1698,59 @@
 
             const sorted = [...games].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            historyList.innerHTML = sorted.map(game => `
-                <div class="game-card">
-                    <button class="delete-game-btn" onclick="deleteGame(${game.id})" title="Elimina partita">×</button>
+            historyList.innerHTML = sorted.map(game => {
+                // Ordina i risultati per posizione
+                const sortedResults = [...game.results].sort((a, b) => a.position - b.position);
+                
+                return `
+                <div class="game-card" onclick="toggleGameDetails(${game.id})" style="cursor: pointer;">
+                    <button class="delete-game-btn" onclick="event.stopPropagation(); deleteGame(${game.id})" title="Elimina partita">×</button>
                     <h4>${new Date(game.date).toLocaleDateString('it-IT')}</h4>
                     <p><strong>Giocatori:</strong> ${game.players.join(', ')}</p>
                     <div class="game-card-result">
-                        ${game.results.map(result => `
+                        ${sortedResults.slice(0, 3).map(result => `
                             <div class="game-result-item">
                                 <strong>${result.playerName}</strong><br>
-                                Pos: ${result.position} | Dadi: ${result.nds} | Punti: ${result.points.toFixed(2)}
+                                Pos: ${result.position} | Dadi: ${result.nds || result.ndv} | Punti: ${result.points.toFixed(2)}
                             </div>
                         `).join('')}
+                        ${sortedResults.length > 3 ? `
+                            <div id="game-details-${game.id}" style="display: none;">
+                                ${sortedResults.slice(3).map(result => `
+                                    <div class="game-result-item">
+                                        <strong>${result.playerName}</strong><br>
+                                        Pos: ${result.position} | Dadi: ${result.nds || result.ndv} | Punti: ${result.points.toFixed(2)}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="show-more-indicator" id="show-more-${game.id}">
+                                <small style="color: var(--color-text-light); font-style: italic;">Clicca per vedere tutti i giocatori (${sortedResults.length - 3} nascosti)</small>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+        
+        function toggleGameDetails(gameId) {
+            const detailsElement = document.getElementById(`game-details-${gameId}`);
+            const indicatorElement = document.getElementById(`show-more-${gameId}`);
+            
+            if (detailsElement) {
+                if (detailsElement.style.display === 'none') {
+                    detailsElement.style.display = 'block';
+                    if (indicatorElement) {
+                        indicatorElement.innerHTML = '<small style="color: var(--color-text-light); font-style: italic;">Clicca per nascondere</small>';
+                    }
+                } else {
+                    detailsElement.style.display = 'none';
+                    if (indicatorElement) {
+                        const hiddenCount = detailsElement.querySelectorAll('.game-result-item').length;
+                        indicatorElement.innerHTML = `<small style="color: var(--color-text-light); font-style: italic;">Clicca per vedere tutti i giocatori (${hiddenCount} nascosti)</small>`;
+                    }
+                }
+            }
         }
         
         function deleteGame(gameId) {
