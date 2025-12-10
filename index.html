@@ -972,39 +972,56 @@
 
         // Firebase Functions
         function loadFromFirebase() {
+            console.log('Caricamento dati da Firebase...');
             db.ref('games').once('value').then(snapshot => {
                 if (snapshot.exists()) {
                     games = Object.values(snapshot.val());
+                    console.log('Partite caricate:', games.length);
                 } else {
                     games = [];
+                    console.log('Nessuna partita trovata');
                 }
                 extractPlayerNamesFromGames();
                 updateLeaderboard();
                 updateGameHistory();
+                updateDashboard();
                 updateSyncStatus();
             }).catch(error => {
-                console.log('Errore caricamento:', error);
+                console.error('Errore caricamento:', error);
                 updateSyncStatus();
             });
         }
 
         function setupFirebaseListeners() {
+            // Listener in tempo reale per tutti i cambiamenti
             db.ref('games').on('value', snapshot => {
+                console.log('Aggiornamento ricevuto da Firebase');
                 if (snapshot.exists()) {
                     games = Object.values(snapshot.val());
+                    console.log('Partite aggiornate:', games.length);
                 } else {
                     games = [];
                 }
                 extractPlayerNamesFromGames();
                 updateLeaderboard();
                 updateGameHistory();
+                updateDashboard();
                 updateSyncStatus();
+            }, error => {
+                console.error('Errore listener Firebase:', error);
             });
 
             // Connessione
             db.ref('.info/connected').on('value', snap => {
                 isOnline = snap.val();
+                console.log('Stato connessione:', isOnline ? 'ONLINE' : 'OFFLINE');
                 updateSyncStatus();
+                
+                // Se torniamo online, ricarica i dati
+                if (isOnline) {
+                    console.log('Riconnesso - ricarico dati...');
+                    loadFromFirebase();
+                }
             });
         }
         
@@ -1035,12 +1052,44 @@
         function updateSyncStatus() {
             const status = document.getElementById('syncStatus');
             if (isOnline) {
-                status.textContent = '✓ Sincronizzato';
+                status.innerHTML = '✓ Sincronizzato <button onclick="forceRefresh()" style="margin-left: 8px; padding: 2px 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; color: white; cursor: pointer; font-size: 10px;">🔄 Aggiorna</button>';
                 status.className = 'sync-status synced';
             } else {
                 status.textContent = '⚠ Offline';
                 status.className = 'sync-status';
             }
+        }
+        
+        function forceRefresh() {
+            console.log('Aggiornamento forzato richiesto...');
+            const status = document.getElementById('syncStatus');
+            status.textContent = '⟳ Aggiornamento in corso...';
+            
+            // Forza il reload da Firebase
+            db.ref('games').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    games = Object.values(snapshot.val());
+                    console.log('Dati aggiornati:', games.length, 'partite');
+                } else {
+                    games = [];
+                }
+                extractPlayerNamesFromGames();
+                updateLeaderboard();
+                updateGameHistory();
+                updateDashboard();
+                updateSyncStatus();
+                
+                // Mostra conferma
+                setTimeout(() => {
+                    const currentStatus = document.getElementById('syncStatus');
+                    currentStatus.textContent = '✓ Aggiornato!';
+                    setTimeout(() => updateSyncStatus(), 2000);
+                }, 500);
+            }).catch(error => {
+                console.error('Errore aggiornamento:', error);
+                status.textContent = '✗ Errore aggiornamento';
+                setTimeout(() => updateSyncStatus(), 3000);
+            });
         }
 
         function setDefaultDate() {
