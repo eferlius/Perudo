@@ -954,13 +954,8 @@
 
         // Initialize app
         function initApp() {
-            const saved = localStorage.getItem('perudoData');
-            if (saved) {
-                const data = JSON.parse(saved);
-                players = data.players || [];
-                games = data.games || [];
-                savedPlayerNames = data.savedPlayerNames || [];
-            }
+            // Non caricare più da localStorage - solo da Firebase
+            console.log('Inizializzazione app - caricamento dati da Firebase...');
             
             setDefaultDate();
             renderPlayerInputs();
@@ -973,6 +968,8 @@
         // Firebase Functions
         function loadFromFirebase() {
             console.log('Caricamento dati da Firebase...');
+            
+            // Carica partite
             db.ref('games').once('value').then(snapshot => {
                 if (snapshot.exists()) {
                     games = Object.values(snapshot.val());
@@ -985,17 +982,31 @@
                 updateLeaderboard();
                 updateGameHistory();
                 updateDashboard();
+            }).catch(error => {
+                console.error('Errore caricamento partite:', error);
+            });
+            
+            // Carica nomi giocatori
+            db.ref('playerNames').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    savedPlayerNames = Object.values(snapshot.val()).sort();
+                    console.log('Giocatori caricati:', savedPlayerNames.length);
+                } else {
+                    console.log('Nessun giocatore salvato');
+                }
+                updatePlayerNameList();
+                renderPlayerInputs();
                 updateSyncStatus();
             }).catch(error => {
-                console.error('Errore caricamento:', error);
+                console.error('Errore caricamento giocatori:', error);
                 updateSyncStatus();
             });
         }
 
         function setupFirebaseListeners() {
-            // Listener in tempo reale per tutti i cambiamenti
+            // Listener in tempo reale per le partite
             db.ref('games').on('value', snapshot => {
-                console.log('Aggiornamento ricevuto da Firebase');
+                console.log('Aggiornamento partite ricevuto da Firebase');
                 if (snapshot.exists()) {
                     games = Object.values(snapshot.val());
                     console.log('Partite aggiornate:', games.length);
@@ -1006,9 +1017,23 @@
                 updateLeaderboard();
                 updateGameHistory();
                 updateDashboard();
-                updateSyncStatus();
             }, error => {
-                console.error('Errore listener Firebase:', error);
+                console.error('Errore listener partite:', error);
+            });
+            
+            // Listener in tempo reale per i nomi giocatori
+            db.ref('playerNames').on('value', snapshot => {
+                console.log('Aggiornamento giocatori ricevuto da Firebase');
+                if (snapshot.exists()) {
+                    savedPlayerNames = Object.values(snapshot.val()).sort();
+                    console.log('Giocatori aggiornati:', savedPlayerNames.length);
+                } else {
+                    savedPlayerNames = [];
+                }
+                updatePlayerNameList();
+                renderPlayerInputs();
+            }, error => {
+                console.error('Errore listener giocatori:', error);
             });
 
             // Connessione
@@ -1039,14 +1064,18 @@
             });
             
             // Merge with existing saved names
+            let hasNewNames = false;
             namesFromGames.forEach(name => {
                 if (!savedPlayerNames.includes(name)) {
                     savedPlayerNames.push(name);
+                    hasNewNames = true;
                 }
             });
             
-            savedPlayerNames.sort();
-            savePlayerNamesToStorage();
+            if (hasNewNames) {
+                savedPlayerNames.sort();
+                savePlayerNamesToFirebase();
+            }
         }
 
         function updateSyncStatus() {
@@ -1065,18 +1094,33 @@
             const status = document.getElementById('syncStatus');
             status.textContent = '⟳ Aggiornamento in corso...';
             
-            // Forza il reload da Firebase
-            db.ref('games').once('value').then(snapshot => {
-                if (snapshot.exists()) {
-                    games = Object.values(snapshot.val());
-                    console.log('Dati aggiornati:', games.length, 'partite');
+            // Forza il reload completo da Firebase
+            Promise.all([
+                db.ref('games').once('value'),
+                db.ref('playerNames').once('value')
+            ]).then(([gamesSnapshot, playersSnapshot]) => {
+                // Aggiorna partite
+                if (gamesSnapshot.exists()) {
+                    games = Object.values(gamesSnapshot.val());
+                    console.log('Partite aggiornate:', games.length);
                 } else {
                     games = [];
                 }
+                
+                // Aggiorna giocatori
+                if (playersSnapshot.exists()) {
+                    savedPlayerNames = Object.values(playersSnapshot.val()).sort();
+                    console.log('Giocatori aggiornati:', savedPlayerNames.length);
+                } else {
+                    savedPlayerNames = [];
+                }
+                
                 extractPlayerNamesFromGames();
                 updateLeaderboard();
                 updateGameHistory();
                 updateDashboard();
+                updatePlayerNameList();
+                renderPlayerInputs();
                 updateSyncStatus();
                 
                 // Mostra conferma
@@ -1469,7 +1513,7 @@
 
         // Data persistence
         function saveData(game) {
-            // Salva localmente
+            // Aggiungi partita all'array locale (temporaneo)
             games.push(game);
             
             // Add player names to saved names
@@ -1480,20 +1524,32 @@
             });
             savedPlayerNames.sort();
             
-            localStorage.setItem('perudoData', JSON.stringify({ players: [], games, savedPlayerNames }));
+            // Salva giocatori su Firebase
+            savePlayerNamesToFirebase();
             
-            // Salva su Firebase
-            db.ref('games/' + game.id).set(game).catch(error => {
-                console.log('Errore salvataggio:', error);
+            // Salva partita su Firebase (unica fonte di verità)
+            db.ref('games/' + game.id).set(game).then(() => {
+                console.log('Partita salvata su Firebase con successo');
+            }).catch(error => {
+                console.error('Errore salvataggio partita:', error);
                 showAlert('Errore di sincronizzazione', 'error');
             });
         }
         
-        function savePlayerNamesToStorage() {
-            const saved = localStorage.getItem('perudoData');
-            const data = saved ? JSON.parse(saved) : { players: [], games: [] };
-            data.savedPlayerNames = savedPlayerNames;
-            localStorage.setItem('perudoData', JSON.stringify(data));
+        function savePlayerNamesToFirebase() {
+            console.log('Salvataggio giocatori su Firebase...', savedPlayerNames.length);
+            
+            // Converti array in oggetto per Firebase
+            const playersObj = {};
+            savedPlayerNames.forEach((name, index) => {
+                playersObj[index] = name;
+            });
+            
+            db.ref('playerNames').set(playersObj).then(() => {
+                console.log('Giocatori salvati con successo');
+            }).catch(error => {
+                console.error('Errore salvataggio giocatori:', error);
+            });
         }
 
         // Leaderboard
@@ -1807,17 +1863,15 @@
                 return;
             }
             
-            // Remove from local array
+            // Remove from local array (temporaneo)
             games = games.filter(g => g.id !== gameId);
             
-            // Update localStorage
-            localStorage.setItem('perudoData', JSON.stringify({ players: [], games, savedPlayerNames }));
-            
-            // Remove from Firebase
+            // Remove from Firebase (unica fonte di verità)
             db.ref('games/' + gameId).remove().then(() => {
-                console.log('Partita eliminata con successo');
+                console.log('Partita eliminata da Firebase con successo');
             }).catch(error => {
-                console.log('Errore eliminazione:', error);
+                console.error('Errore eliminazione da Firebase:', error);
+                showAlert('Errore durante l\'eliminazione', 'error');
             });
             
             // Update all views
@@ -1898,7 +1952,7 @@
             if (index !== -1) {
                 savedPlayerNames[index] = newName;
                 savedPlayerNames.sort();
-                savePlayerNamesToStorage();
+                savePlayerNamesToFirebase();
                 updatePlayerNameList();
             }
         }
@@ -1923,7 +1977,7 @@
             
             savedPlayerNames.push(name);
             savedPlayerNames.sort();
-            savePlayerNamesToStorage();
+            savePlayerNamesToFirebase();
             updatePlayerNameList();
             input.value = '';
             input.focus();
@@ -1933,7 +1987,7 @@
             if (!confirm(`Rimuovere ${name} dal database?`)) return;
             
             savedPlayerNames = savedPlayerNames.filter(n => n !== name);
-            savePlayerNamesToStorage();
+            savePlayerNamesToFirebase();
             updatePlayerNameList();
         }
 
