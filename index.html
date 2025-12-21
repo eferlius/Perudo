@@ -747,6 +747,7 @@
             font-weight: 500;
         }
         
+        /*
         .podium-list .count {
             background-color: var(--color-primary);
             color: white;
@@ -755,6 +756,23 @@
             font-size: 12px;
             font-weight: 600;
         }
+        */
+
+        .podium-list .count {
+        background-color: var(--color-primary);
+        color: white;
+        width: 24px;
+
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 12px;
+        }
+
 
         @media (max-width: 600px) {
             .form-row {
@@ -835,6 +853,10 @@
                     <div class="podium-card">
                         <h3>🥉 Terzi Posti</h3>
                         <ul class="podium-list" id="thirdPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥴 Ultimi Posti</h3>
+                        <ul class="podium-list" id="lastPlaceList"></ul>
                     </div>
                 </div>
                 
@@ -1618,30 +1640,102 @@
             
             // Update first place
             const firstPlaceList = document.getElementById('firstPlaceList');
-            const firstPlaceData = Object.entries(positions[1]).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            firstPlaceList.innerHTML = firstPlaceData.length > 0 
-                ? firstPlaceData.map(([name, count]) => `
-                    <li><span class="player-name">${name}</span><span class="count">${count}</span></li>
-                `).join('')
-                : '<li style="color: #999;">Nessun dato</li>';
+            const firstPlaceGrouped = {};
+            Object.entries(positions[1]).forEach(([name, count]) => {
+                if (!firstPlaceGrouped[count]) {
+                    firstPlaceGrouped[count] = [];
+                }
+                firstPlaceGrouped[count].push(name);
+            });
+            const firstPlaceSorted = Object.keys(firstPlaceGrouped)
+                .map(Number)
+                .sort((a, b) => b - a)
+                .slice(0, 5);
+            let firstPlaceHtml = '';
+            firstPlaceSorted.forEach(count => {
+                const names = firstPlaceGrouped[count].sort();
+                firstPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
+            });
+            firstPlaceList.innerHTML = firstPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
             
             // Update second place
             const secondPlaceList = document.getElementById('secondPlaceList');
-            const secondPlaceData = Object.entries(positions[2]).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            secondPlaceList.innerHTML = secondPlaceData.length > 0
-                ? secondPlaceData.map(([name, count]) => `
-                    <li><span class="player-name">${name}</span><span class="count">${count}</span></li>
-                `).join('')
-                : '<li style="color: #999;">Nessun dato</li>';
+            const secondPlaceGrouped = {};
+            Object.entries(positions[2]).forEach(([name, count]) => {
+                if (!secondPlaceGrouped[count]) {
+                    secondPlaceGrouped[count] = [];
+                }
+                secondPlaceGrouped[count].push(name);
+            });
+            const secondPlaceSorted = Object.keys(secondPlaceGrouped)
+                .map(Number)
+                .sort((a, b) => b - a)
+                .slice(0, 5);
+            let secondPlaceHtml = '';
+            secondPlaceSorted.forEach(count => {
+                const names = secondPlaceGrouped[count].sort();
+                secondPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
+            });
+            secondPlaceList.innerHTML = secondPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
             
             // Update third place
             const thirdPlaceList = document.getElementById('thirdPlaceList');
-            const thirdPlaceData = Object.entries(positions[3]).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            thirdPlaceList.innerHTML = thirdPlaceData.length > 0
-                ? thirdPlaceData.map(([name, count]) => `
-                    <li><span class="player-name">${name}</span><span class="count">${count}</span></li>
-                `).join('')
-                : '<li style="color: #999;">Nessun dato</li>';
+            const thirdPlaceGrouped = {};
+            Object.entries(positions[3]).forEach(([name, count]) => {
+                if (!thirdPlaceGrouped[count]) {
+                    thirdPlaceGrouped[count] = [];
+                }
+                thirdPlaceGrouped[count].push(name);
+            });
+            const thirdPlaceSorted = Object.keys(thirdPlaceGrouped)
+                .map(Number)
+                .sort((a, b) => b - a)
+                .slice(0, 5);
+            let thirdPlaceHtml = '';
+            thirdPlaceSorted.forEach(count => {
+                const names = thirdPlaceGrouped[count].sort();
+                thirdPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
+            });
+            thirdPlaceList.innerHTML = thirdPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
+
+
+            // Update last place
+            const lastPlaceList = document.getElementById('lastPlaceList');
+            const lastPlaceData = {};
+            
+            games.forEach(game => {
+                if (game.results?.length) {
+                    const lastResult = game.results.reduce((prev, current) => 
+                        current.position > prev.position ? current : prev
+                    );
+                    if (lastResult?.playerName) {
+                        lastPlaceData[lastResult.playerName] = (lastPlaceData[lastResult.playerName] || 0) + 1;
+                    }
+                }
+            });
+            
+            // Group by count and sort
+            const groupedByCount = {};
+            Object.entries(lastPlaceData).forEach(([name, count]) => {
+                if (!groupedByCount[count]) {
+                    groupedByCount[count] = [];
+                }
+                groupedByCount[count].push(name); // Attach a new line to the name
+            });
+            
+            // Sort counts descending and build display
+            const sortedCounts = Object.keys(groupedByCount)
+                .map(Number)
+                .sort((a, b) => b - a)
+                .slice(0, 5);
+            
+            let html = '';
+            sortedCounts.forEach(count => {
+                const names = groupedByCount[count].sort();
+                html += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
+            });
+            
+            lastPlaceList.innerHTML = html || '<li style="color: #999;">Nessun dato</li>';
         }
         
         function updateTotalPointsChart() {
