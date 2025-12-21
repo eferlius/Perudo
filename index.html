@@ -432,45 +432,86 @@
             margin-bottom: var(--spacing-md);
         }
 
-        .leaderboard-table {
+        .rel_points_leaderboard-table .negative {
+            color: var(--color-error);
+        }
+
+        .rel_points_leaderboard-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: var(--spacing-lg);
         }
 
-        .leaderboard-table thead {
+        .rel_points_leaderboard-table thead {
             background-color: var(--color-primary);
             color: white;
         }
 
-        .leaderboard-table th,
-        .leaderboard-table td {
+        .rel_points_leaderboard-table th,
+        .rel_points_leaderboard-table td {
             padding: 12px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid var(--color-border);
         }
 
-        .leaderboard-table tbody tr:hover {
+        .rel_points_leaderboard-table tbody tr:hover {
             background-color: #f0f0f0;
         }
 
-        .leaderboard-table .rank {
+        .rel_points_leaderboard-table .rank {
             font-weight: bold;
             color: var(--color-primary);
             min-width: 40px;
         }
 
-        .leaderboard-table .points {
+        .rel_points_leaderboard-table .points {
             font-weight: 600;
             color: var(--color-primary);
         }
 
-        .leaderboard-table .positive {
+        .rel_points_leaderboard-table .positive {
             color: var(--color-success);
         }
 
-        .leaderboard-table .negative {
+        .rel_points_leaderboard-table .negative {
             color: var(--color-error);
+        }
+
+        .tot_points_leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .tot_points_leaderboard-table thead {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .tot_points_leaderboard-table th,
+        .tot_points_leaderboard-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .tot_points_leaderboard-table tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .tot_points_leaderboard-table .rank {
+            font-weight: bold;
+            color: var(--color-primary);
+            min-width: 40px;
+        }
+
+        .tot_points_leaderboard-table .points {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .tot_points_leaderboard-table .positive {
+            color: var(--color-success);
         }
 
         .game-history {
@@ -746,17 +787,6 @@
         .podium-list .player-name {
             font-weight: 500;
         }
-        
-        /*
-        .podium-list .count {
-            background-color: var(--color-primary);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        */
 
         .podium-list .count {
         background-color: var(--color-primary);
@@ -787,12 +817,12 @@
                 grid-template-columns: 1fr;
             }
 
-            .leaderboard-table {
+            .rel_points_leaderboard-table {
                 font-size: 14px;
             }
 
-            .leaderboard-table th,
-            .leaderboard-table td {
+            .rel_points_leaderboard-table th,
+            .rel_points_leaderboard-table td {
                 padding: 8px;
             }
 
@@ -905,16 +935,30 @@
         <div id="classifica" class="tab-content">
             <div class="card">
                 <h2>Classifica Generale</h2>
-                <table class="leaderboard-table" id="leaderboardTable">
+                <table class="rel_points_leaderboard-table" id="rel_points_leaderboardTable">
                     <thead>
                         <tr>
                             <th>Posizione</th>
                             <th>Giocatore</th>
                             <th>Partite</th>
-                            <th>Punti</th>
+                            <th>Punti/Partite</th>
                         </tr>
                     </thead>
-                    <tbody id="leaderboardBody">
+                    <tbody id="rel_points_leaderboardBody">
+                    </tbody>
+                </table>
+
+                <h2>Classifica Punti Totali</h2>
+                <table class="tot_points_leaderboard-table" id="tot_points_leaderboardTable">
+                    <thead>
+                        <tr>
+                            <th>Posizione</th>
+                            <th>Giocatore</th>
+                            <th>Partite</th>
+                            <th>Punti Totali</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tot_points_leaderboardBody">
                     </tbody>
                 </table>
             </div>
@@ -1001,7 +1045,8 @@
                     console.log('Nessuna partita trovata');
                 }
                 extractPlayerNamesFromGames();
-                updateLeaderboard();
+                update_tot_points_leaderboard();
+                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
             }).catch(error => {
@@ -1036,7 +1081,8 @@
                     games = [];
                 }
                 extractPlayerNamesFromGames();
-                updateLeaderboard();
+                update_tot_points_leaderboard();
+                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
             }, error => {
@@ -1138,7 +1184,8 @@
                 }
                 
                 extractPlayerNamesFromGames();
-                updateLeaderboard();
+                update_tot_points_leaderboard();
+                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
                 updatePlayerNameList();
@@ -1194,7 +1241,7 @@
                 const tabId = e.target.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
                 if (tabId === 'home') updateDashboard();
-                if (tabId === 'classifica') updateLeaderboard();
+                if (tabId === 'classifica') update_tot_points_leaderboard();
                 if (tabId === 'storico') updateGameHistory();
                 if (tabId === 'giocatori') updatePlayerNameList();
             });
@@ -1522,7 +1569,8 @@
                 players = [];
                 renderPlayerInputs();
                 setDefaultDate();
-                updateLeaderboard();
+                update_tot_points_leaderboard();
+                update_rel_points_leaderboard();
                 updateGameHistory();
             }, 1500);
         }
@@ -1574,12 +1622,52 @@
             });
         }
 
-        // Leaderboard
-        function updateLeaderboard() {
-            const leaderboardBody = document.getElementById('leaderboardBody');
+        // rel_points_leaderboard
+        function update_rel_points_leaderboard() {
+            const rel_points_leaderboardBody = document.getElementById('rel_points_leaderboardBody');
             
             if (games.length === 0) {
-                leaderboardBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
+                rel_points_leaderboardBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
+                return;
+            }
+
+            const playerStats = {};
+
+            games.forEach(game => {
+                if (game.results) {
+                    game.results.forEach(result => {
+                        if (!playerStats[result.playerName]) {
+                            playerStats[result.playerName] = { points: 0, games: 0 };
+                        }
+                        playerStats[result.playerName].points += result.points;
+                        playerStats[result.playerName].games += 1;
+                    });
+                }
+            });
+
+            const sorted = Object.entries(playerStats)
+                .map(([name, stats]) => ({ name, ...stats, avgPoints: stats.points / stats.games }))
+                .sort((a, b) => b.avgPoints - a.avgPoints);
+
+            rel_points_leaderboardBody.innerHTML = sorted.map((player, index) => `
+                <tr>
+                    <td class="rank">#${index + 1}</td>
+                    <td>${player.name}</td>
+                    <td>${player.games}</td>
+                    <td class="points ${player.avgPoints >= 0 ? 'positive' : 'negative'}">
+                        ${player.avgPoints.toFixed(3)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+
+        // tot_points_leaderboard
+        function update_tot_points_leaderboard() {
+            const tot_points_leaderboardBody = document.getElementById('tot_points_leaderboardBody');
+            
+            if (games.length === 0) {
+                tot_points_leaderboardBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
                 return;
             }
 
@@ -1601,7 +1689,7 @@
                 .map(([name, stats]) => ({ name, ...stats }))
                 .sort((a, b) => b.points - a.points);
 
-            leaderboardBody.innerHTML = sorted.map((player, index) => `
+            tot_points_leaderboardBody.innerHTML = sorted.map((player, index) => `
                 <tr>
                     <td class="rank">#${index + 1}</td>
                     <td>${player.name}</td>
@@ -1970,7 +2058,7 @@
             
             // Update all views
             updateGameHistory();
-            updateLeaderboard();
+            updatetot_points_leaderboard();
             updateDashboard();
             
             // Recheck date availability
