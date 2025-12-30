@@ -436,87 +436,47 @@
             margin-bottom: var(--spacing-md);
         }
 
-        .rel_points_leaderboard-table .negative {
-            color: var(--color-error);
-        }
-
-        .rel_points_leaderboard-table {
+        .leaderboard-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: var(--spacing-lg);
         }
 
-        .rel_points_leaderboard-table thead {
+        .leaderboard-table thead {
             background-color: var(--color-primary);
             color: white;
         }
 
-        .rel_points_leaderboard-table th,
-        .rel_points_leaderboard-table td {
+        .leaderboard-table th,
+        .leaderboard-table td {
             padding: 12px;
             text-align: center;
             border-bottom: 1px solid var(--color-border);
         }
 
-        .rel_points_leaderboard-table tbody tr:hover {
+        .leaderboard-table tbody tr:hover {
             background-color: #f0f0f0;
         }
 
-        .rel_points_leaderboard-table .rank {
+        .leaderboard-table .rank {
             font-weight: bold;
             color: var(--color-primary);
             min-width: 40px;
         }
 
-        .rel_points_leaderboard-table .points {
+        .leaderboard-table .points {
             font-weight: 600;
             color: var(--color-primary);
         }
 
-        .rel_points_leaderboard-table .positive {
-            color: var(--color-success);
+        .leaderboard-table .positive {
+            color: var(--color-primary);
         }
 
-        .rel_points_leaderboard-table .negative {
+        .leaderboard-table .negative {
             color: var(--color-error);
         }
 
-        .tot_points_leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .tot_points_leaderboard-table thead {
-            background-color: var(--color-primary);
-            color: white;
-        }
-
-        .tot_points_leaderboard-table th,
-        .tot_points_leaderboard-table td {
-            padding: 12px;
-            text-align: center;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .tot_points_leaderboard-table tbody tr:hover {
-            background-color: #f0f0f0;
-        }
-
-        .tot_points_leaderboard-table .rank {
-            font-weight: bold;
-            color: var(--color-primary);
-            min-width: 40px;
-        }
-
-        .tot_points_leaderboard-table .points {
-            font-weight: 600;
-            color: var(--color-primary);
-        }
-
-        .tot_points_leaderboard-table .positive {
-            color: var(--color-success);
-        }
 
         .game-history {
             margin-top: var(--spacing-lg);
@@ -821,12 +781,12 @@
                 grid-template-columns: 1fr;
             }
 
-            .rel_points_leaderboard-table {
+            .leaderboard-table {
                 font-size: 14px;
             }
 
-            .rel_points_leaderboard-table th,
-            .rel_points_leaderboard-table td {
+            .leaderboard-table th,
+            .leaderboard-table td {
                 padding: 8px;
             }
 
@@ -957,7 +917,7 @@
                 }
 
                 .participation-badge.third-place {
-                    background-color: var(--color-bronze)   ;
+                    background-color: var(--color-bronze);
                     color: white;
                 }
 
@@ -1017,11 +977,11 @@
                                     const result = game?.results?.find(r => r.playerName === playerName);
                                     if (result) {
                                         const maxPosition = Math.max(...game.results.map(r => r.position));
-                                        const badgeClass = result.position === maxPosition ? 'last-place' : 
-                                                        result.position === 1 ? 'first-place' :
-                                                        result.position === 2 ? 'second-place' :
-                                                        result.position === 3 ? 'third-place' : 
-                                                        'played';
+                                        const badgeClass =  result.position === maxPosition ? 'last-place' : 
+                                                            result.position === 1 ? 'first-place' :
+                                                            result.position === 2 ? 'second-place' :
+                                                            result.position === 3 ? 'third-place' : 
+                                                            'played';
                                         return `<td><span class="participation-badge ${badgeClass}">${result.position}°</span></td>`;
                                     } else {
                                         return `<td><span class="participation-badge not-played">NA</span></td>`;
@@ -1045,10 +1005,9 @@
                     <div id="dateAlert" style="margin-top: 8px;"></div>
                 </div>
 
-                <h3>Giocatori</h3>
+                <h2>Giocatori</h2>
                 <div class="players-list" id="playersList"></div>
                 <button class="btn btn-secondary btn-full" id="addPlayerBtn">+ Aggiungi Giocatore</button>             
-
                 <button class="btn btn-primary btn-full" id="saveGameBtn" style="margin-top: var(--spacing-lg);">Salva Partita</button>
                 <div id="alert"></div>
             </div>
@@ -1057,50 +1016,24 @@
         <!-- TAB: Classifica -->
         <div id="classifica" class="tab-content">
             <div class="card">
-                <!--
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
                     <div>
                         <label for="classificationStartDate">Data Inizio</label>
-                        <input type="date" id="classificationStartDate" />
+                        <input type="date" id="classificationStartDate"/>
                     </div>
                     <div>
                         <label for="classificationEndDate">Data Fine</label>
-                        <input type="date" id="classificationEndDate" />
+                        <input type="date" id="classificationEndDate"/>
                     </div>
                 </div>
-                
-                <script>
-                    function initializeDateFilters() {
-                        const startDateInput = document.getElementById('classificationStartDate');
-                        const endDateInput = document.getElementById('classificationEndDate');
-                        
-                        if (startDateInput && endDateInput) {
-                            // Set default dates (last 30 days and today)
-                            const today = new Date();
-                            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-                            
-                            startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
-                            endDateInput.value = today.toISOString().split('T')[0];
-                            
-                            // Add event listeners
-                            startDateInput.addEventListener('change', () => updateDashboard());
-                            endDateInput.addEventListener('change', () => updateDashboard());
-                        }
-                    }
-                    
-                    function getFilteredGames() {
-                        const startDate = document.getElementById('classificationStartDate')?.value;
-                        const endDate = document.getElementById('classificationEndDate')?.value;
-                        
-                        if (!startDate || !endDate) return games;
-                        
-                        return games.filter(game => game.date >= startDate && game.date <= endDate);
-                    }
-                </script>
-                -->
-                <h1>Risultati Relativi</h1>
 
-                <h2>Podio</h2>
+                <h1>Risultati Relativi</h1>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    I risultati relativi mostrano i punti e i piazzamenti tenendo conto delle partite giocate.</p>
+
+                <h2>Podio Relativo</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il podio relativo viene calcolato dividendo il numero di piazzamenti per il numero di partite giocate.</p>
                 <div class="podium-grid" id="relativePodium">
                     <div class="podium-card">
                         <h3>🥇 Primi Posti</h3>
@@ -1120,30 +1053,35 @@
                     </div>
                 </div>
                 
-                <h2>Classifica</h2>
-                <table class="rel_points_leaderboard-table" id="relativeClassification">
+                <h2>Classifica Relativa</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il punteggio viene calcolato dividendo il numero totale di punti per il numero di partite giocate.</p>
+                <table class="leaderboard-table" id="relativeClassification">
                     <thead>
                         <tr>
                             <th>Posizione</th>
                             <th>Giocatore</th>
-                            <th>Partite</th>
                             <th>Punti/Partite</th>
-                            <th>% Partite Giocate</th>
+                            <th>Partite (%)</th>
                         </tr>
                     </thead>
                     <tbody id="relativeClassificationBody">
                     </tbody>
                 </table>
 
-                <h2>Evoluzione Classifica</h2>
-                        <div class="chart-wrapper">
-                            <canvas id="relativeClassificationEvolution"></canvas>
-                        </div>
+                <h2>Evoluzione Classifica Relativa</h2>
+                <div class="chart-wrapper">
+                    <canvas id="relativeClassificationEvolution"></canvas>
+                </div>
 
                 <hr style="margin: 20px 0; border: 1px solid var(--color-border);" />
                 
                 <h1>Risultati Assoluti</h1>
-                <h2>Podio</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    I risultati assoluti mostrano i punti e i piazzamenti senza tenere conto delle partite giocate.</p>
+                <h2>Podio Assoluto</h2>
+                 <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il podio assoluto mostra i piazzamenti senza tenere conto delle partite giocate.</p>
                 <div class="podium-grid" id="absolutePodium">
                     <div class="podium-card">
                         <h3>🥇 Primi Posti</h3>
@@ -1163,14 +1101,16 @@
                     </div>
                 </div>
 
-                <h2>Classifica</h2>
-                <table class="tot_points_leaderboard-table" id="absoluteClassification">
+                <h2>Classifica Assoluta</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il punteggio viene calcolato sommando il numero di punti ottenuti in ogni partita.</p>
+                <table class="leaderboard-table" id="absoluteClassification">
                     <thead>
                         <tr>
                             <th>Posizione</th>
                             <th>Giocatore</th>
-                            <th>Partite</th>
                             <th>Punti Totali</th>
+                            <th>Partite (%)</th>
                         </tr>
                     </thead>
                     <tbody id="absoluteClassificationBody">
@@ -1178,24 +1118,12 @@
                 </table>
 
                 <h2>Evoluzione Classifica</h2>
-                <div class="chart-container">
-                        <div class="chart-wrapper">
-                            <canvas id="absoluteClassificationEvolution"></canvas>
-                        </div>
-                    </div>
+                <div class="chart-wrapper">
+                    <canvas id="absoluteClassificationEvolution"></canvas>
                 </div>
-
             </div>
         </div>
 
-        <!-- TAB: Storico -->
-        <div id="storico" class="tab-content">
-            <div class="card">
-                <h2>Storico Partite</h2>
-                <div id="gameHistoryList"></div>
-            </div>
-        </div>
-        
         <!-- TAB: Giocatori -->
         <div id="giocatori" class="tab-content">
             <div class="card">
@@ -1211,7 +1139,17 @@
                 <div class="player-name-list" id="playerNameList"></div>
             </div>
         </div>
+
+        <!-- TAB: Storico -->
+        <div id="storico" class="tab-content">
+            <div class="card">
+                <h2>Storico Partite</h2>
+                <div id="gameHistoryList"></div>
+            </div>
+        </div>
     </div>
+        
+        
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1248,6 +1186,8 @@
             console.log('Inizializzazione app - caricamento dati da Firebase...');
             
             setDefaultDate();
+            setStartDate();
+            setEndDate();
             renderPlayerInputs();
             loadFromFirebase();
             setupFirebaseListeners();
@@ -1436,6 +1376,35 @@
             // Add event listener for date changes
             dateInput.addEventListener('change', function() {
                 checkDateAvailability(this.value);
+            });
+        }
+
+        function setStartDate() {
+            const today = new Date();
+            // Use local date formatting instead of ISO to avoid timezone issues
+            const startOfYear = `${today.getFullYear()}-01-01`;
+            const dateInput = document.getElementById('classificationStartDate');
+            dateInput.value = startOfYear;
+            
+            // Add event listener for date changes
+            dateInput.addEventListener('change', function() {
+                updateDashboard();
+            });
+        }
+
+        function setEndDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const localDate = `${year}-${month}-${day}`;
+            
+            const dateInput = document.getElementById('classificationEndDate');
+            dateInput.value = localDate;
+            
+            // Add event listener for date changes
+            dateInput.addEventListener('change', function() {
+                updateDashboard();
             });
         }
         
@@ -1750,19 +1719,33 @@
         let chartInstances = {};
         
         function updateDashboard() {
+            // Get date range from inputs
+            const startDate = document.getElementById('classificationStartDate')?.value;
+            const endDate = document.getElementById('classificationEndDate')?.value;
+            
+            // Filter games by date range
+            const filteredGames = games.filter(game => {
+                if (!game.date) return false;
+                if (startDate && game.date < startDate) return false;
+                if (endDate && game.date > endDate) return false;
+                return true;
+            });
+            
+            // Pass filtered games to update functions instead of modifying global
             updateParticipationTable();
-            updateRelativePodiumStats();
-            updateRelativeClassification();
-            updateRelativeClassificationEvolutionChart();
-            updateAbsolutePodiumStats();
-            updateAbsoluteClassification();
-            updateAbsoluteClassificationEvolutionChart();
+            updateRelativePodiumStats(filteredGames);
+            updateRelativeClassification(filteredGames);
+            updateRelativeClassificationEvolutionChart(filteredGames);
+            updateAbsolutePodiumStats(filteredGames);
+            updateAbsoluteClassification(filteredGames);
+            updateAbsoluteClassificationEvolutionChart(filteredGames);
         }
 
-        function updateRelativePodiumStats() {
+        function updateRelativePodiumStats(games) {
             const positionCounts = { 1: {}, 2: {}, 3: {}, last: {} };
             const playerGamesCount = {};
 
+            
             games.forEach(game => {
             if (game.results && game.results.length > 0) {
             // Find the maximum position in this game (actual last place)
@@ -1865,11 +1848,11 @@
             .join('') || '<li style="color: #999;">Nessun dato</li>';
         }
 
-        function updateRelativeClassification() {
+        function updateRelativeClassification(games) {
             const relativeClassificationBody = document.getElementById('relativeClassificationBody');
             
             if (games.length === 0) {
-            relativeClassificationBody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna partita ancora</td></tr>';
+            relativeClassificationBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
             return;
             }
 
@@ -1902,16 +1885,15 @@
             <tr>
                 <td class="rank">#${index + 1}</td>
                 <td>${player.name}</td>
-                <td>${player.games}</td>
                 <td class="points ${player.avgPoints >= 0 ? 'positive' : 'negative'}">
                 ${player.avgPoints.toFixed(3)}
                 </td>
-                <td>${player.playedPercentage.toFixed(1)}%</td>
+                <td>${player.games} (${player.playedPercentage.toFixed(1)}%)</td>
             </tr>
             `).join('');
         }
         
-        function updateRelativeClassificationEvolutionChart() {
+        function updateRelativeClassificationEvolutionChart(games) {
             // Sort games by date
             const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
             
@@ -2037,7 +2019,7 @@
             });
         }
 
-        function updateAbsolutePodiumStats() {
+        function updateAbsolutePodiumStats(games) {
             const positionCounts = { 1: {}, 2: {}, 3: {}, last: {} };
 
             games.forEach(game => {
@@ -2121,45 +2103,51 @@
             .join('') || '<li style="color: #999;">Nessun dato</li>';
         }
 
-        function updateAbsoluteClassification() {
+        function updateAbsoluteClassification(games) {
             const absoluteClassificationBody = document.getElementById('absoluteClassificationBody');
             
             if (games.length === 0) {
-                absoluteClassificationBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
-                return;
+            absoluteClassificationBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
+            return;
             }
 
             const playerStats = {};
+            let totalGames = 0;
 
             games.forEach(game => {
-                if (game.results) {
-                    game.results.forEach(result => {
-                        if (!playerStats[result.playerName]) {
-                            playerStats[result.playerName] = { points: 0, games: 0 };
-                        }
-                        playerStats[result.playerName].points += result.points;
-                        playerStats[result.playerName].games += 1;
-                    });
+            if (game.results) {
+                totalGames++;
+                game.results.forEach(result => {
+                if (!playerStats[result.playerName]) {
+                    playerStats[result.playerName] = { points: 0, games: 0 };
                 }
+                playerStats[result.playerName].points += result.points;
+                playerStats[result.playerName].games += 1;
+                });
+            }
             });
 
             const sorted = Object.entries(playerStats)
-                .map(([name, stats]) => ({ name, ...stats }))
-                .sort((a, b) => b.points - a.points);
+            .map(([name, stats]) => ({ 
+                name, 
+                ...stats,
+                playedPercentage: (stats.games / totalGames) * 100
+            }))
+            .sort((a, b) => b.points - a.points);
 
             absoluteClassificationBody.innerHTML = sorted.map((player, index) => `
-                <tr>
-                    <td class="rank">#${index + 1}</td>
-                    <td>${player.name}</td>
-                    <td>${player.games}</td>
-                    <td class="points ${player.points >= 0 ? 'positive' : 'negative'}">
-                        ${player.points.toFixed(2)}
-                    </td>
-                </tr>
+            <tr>
+                <td class="rank">#${index + 1}</td>
+                <td>${player.name}</td>
+                <td class="points ${player.points >= 0 ? 'positive' : 'negative'}">
+                ${player.points.toFixed(2)}
+                </td>
+                <td>${player.games} (${player.playedPercentage.toFixed(1)}%)</td>
+            </tr>
             `).join('');
         }
         
-        function updateAbsoluteClassificationEvolutionChart() {
+        function updateAbsoluteClassificationEvolutionChart(games) {
             // Sort games by date
             const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
             
@@ -2373,7 +2361,7 @@
             
             // Update all views
             updateGameHistory();
-            updatetot_points_leaderboard();
+            updateleaderboard();
             updateDashboard();
             
             // Recheck date availability
