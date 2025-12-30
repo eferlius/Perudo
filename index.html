@@ -1006,6 +1006,13 @@
                 </div>
 
                 <h2>Giocatori</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Se un giocatore abbandona il gioco, è come se perdesse tutti i dadi che rimangono uno dopo l'altro.<br>
+                    <br>
+                    Se due o più giocatori abbandonano il gioco contemporaneamente, è come se perdessero i dadi a turno, partendo da quello che ha meno dadi rimasti.<br>
+                    Nel caso in cui due o più giocatori abbiano lo stesso numero di dadi, parte quello che ha perso il dado per primo.<br>
+                    Nel caso in cui non sia possibile determinare chi ha perso il dado per primo, i giocatori lanciano un dado ciascuno e chi ottiene il numero più basso perde il dado per primo.<br>
+                </p>
                 <div class="players-list" id="playersList"></div>
                 <button class="btn btn-secondary btn-full" id="addPlayerBtn">+ Aggiungi Giocatore</button>             
                 <button class="btn btn-primary btn-full" id="saveGameBtn" style="margin-top: var(--spacing-lg);">Salva Partita</button>
@@ -1186,12 +1193,12 @@
             console.log('Inizializzazione app - caricamento dati da Firebase...');
             
             setDefaultDate();
-            setStartDate();
-            setEndDate();
             renderPlayerInputs();
             loadFromFirebase();
             setupFirebaseListeners();
             updateSyncStatus();
+            setStartDate();
+            setEndDate();
             updateDashboard();
             updateParticipationTable();
         }
@@ -1346,7 +1353,6 @@
                 } else {
                     savedPlayerNames = [];
                 }
-                
                 extractPlayerNamesFromGames();
                 updateGameHistory();
                 updateDashboard();
@@ -1431,7 +1437,7 @@
                 e.target.classList.add('active');
                 const tabId = e.target.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
-                if (tabId === 'home') updateDashboard();
+                if (tabId === 'home') updateParticipationTable();
                 if (tabId === 'classifica') updateDashboard();
                 if (tabId === 'storico') updateGameHistory();
                 if (tabId === 'giocatori') updatePlayerNameList();
@@ -1601,6 +1607,12 @@
 
             if (!isOrderValid) {
                 showAlert('I dadi devono essere in ordine decrescente', 'error');
+                return;
+            }
+
+            // Verify minimum number of players
+            if (sortedPlayers.length < 3) {
+                showAlert('Sono necessari almeno 3 giocatori per salvare una partita', 'error');
                 return;
             }
             
@@ -1897,81 +1909,84 @@
             // Sort games by date
             const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // Track average points per game over time
-            const playerEvolution = {};
-            const dates = [];
+            // Get all unique dates
+            const allDates = [...new Set(sortedGames.map(g => g.date))].sort();
             
-            sortedGames.forEach((game, gameIndex) => {
-            if (game.results && game.date) {
-                dates.push(new Date(game.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
-                
-                // Initialize player evolution arrays if needed
-                game.results.forEach(result => {
-                if (!playerEvolution[result.playerName]) {
-                    playerEvolution[result.playerName] = [];
-                }
-                });
-                
-                // Calculate cumulative stats up to this game
-                const playerStats = {};
-                sortedGames.slice(0, gameIndex + 1).forEach(g => {
-                if (g.results) {
-                    g.results.forEach(result => {
-                    if (!playerStats[result.playerName]) {
-                        playerStats[result.playerName] = { points: 0, games: 0 };
-                    }
-                    playerStats[result.playerName].points += result.points;
-                    playerStats[result.playerName].games += 1;
-                    });
-                }
-                });
-                
-                // Calculate average points and rank players
-                const ranked = Object.entries(playerStats)
-                .map(([name, stats]) => ({ 
-                    name, 
-                    avgPoints: stats.points / stats.games,
-                    rank: 0
-                }))
-                .sort((a, b) => b.avgPoints - a.avgPoints)
-                .map((player, index) => ({ ...player, rank: index + 1 }));
-                
-                // Update position for all players
-                Object.keys(playerEvolution).forEach(playerName => {
-                const playerRank = ranked.find(r => r.name === playerName);
-                playerEvolution[playerName].push(playerRank ? playerRank.rank : null);
-                });
-            }
+            // Track cumulative points and games played for each player
+            const playerStats = {};
+            const playerEvolution = {};
+            const dateLabels = [];
+            
+            // Initialize all players
+            savedPlayerNames.forEach(playerName => {
+            playerStats[playerName] = { points: 0, games: 0 };
+            playerEvolution[playerName] = [];
             });
             
-            // Get top 10 players by final rank
+            // Process each date
+            allDates.forEach((date) => {
+            dateLabels.push(new Date(date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
+            
+            // Find game for this date if it exists
+            const gameForDate = sortedGames.find(g => g.date === date);
+            
+            if (gameForDate && gameForDate.results) {
+                // Update cumulative points and games for players who played
+                gameForDate.results.forEach(result => {
+                if (playerStats.hasOwnProperty(result.playerName)) {
+                    playerStats[result.playerName].points += result.points;
+                    playerStats[result.playerName].games += 1;
+                }
+                });
+            }
+            
+            // Rank ALL players by average points (relative: total points / games played)
+            const ranked = Object.entries(playerStats)
+                .map(([name, stats]) => ({ 
+                name, 
+                avgPoints: stats.games > 0 ? stats.points / stats.games : 0,
+                games: stats.games
+                }))
+                .sort((a, b) => {
+                // Sort by average points descending, then by games played descending
+                if (b.avgPoints !== a.avgPoints) return b.avgPoints - a.avgPoints;
+                return b.games - a.games;
+                })
+                .map((player, index) => ({ ...player, rank: index + 1 }));
+            
+            // Record rank for each player at this date
+            savedPlayerNames.forEach(playerName => {
+                const playerRank = ranked.find(r => r.name === playerName);
+                playerEvolution[playerName].push(playerRank ? playerRank.rank : null);
+            });
+            });
+            
+            // Get top 15 players by final rank
             const topPlayers = Object.entries(playerEvolution)
             .map(([name, ranks]) => ({ name, finalRank: ranks[ranks.length - 1] || null }))
             .filter(p => p.finalRank !== null)
             .sort((a, b) => a.finalRank - b.finalRank)
-            .slice(0, 10)
+            .slice(0, 15)
             .map(p => p.name);
             
             const colors = [
-            'rgba(43, 122, 111, 1)',
-            'rgba(52, 152, 219, 1)',
-            'rgba(231, 76, 60, 1)',
-            'rgba(241, 196, 15, 1)',
-            'rgba(155, 89, 182, 1)',
-            'rgba(26, 188, 156, 1)',
-            'rgba(241, 148, 24, 1)',
-            'rgba(46, 204, 113, 1)',
-            'rgba(52, 73, 94, 1)',
-            'rgba(149, 165, 166, 1)'
+            'rgba(27, 158, 119, 1)',
+            'rgba(217, 95, 2, 1)',
+            'rgba(117, 112, 179, 1)',
+            'rgba(231, 41, 137, 1)',
+            'rgba(102, 166, 30, 1)'
             ];
+
+            const dashes = [[], [10, 10], [1, 1]];            
             
             const datasets = topPlayers.map((playerName, index) => ({
             label: playerName,
             data: playerEvolution[playerName],
-            borderColor: colors[index],
-            backgroundColor: colors[index].replace('1)', '0.1)'),
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length].replace('1)', '0.1)'),
+            borderDash: dashes[index % dashes.length],
             borderWidth: 2,
-            tension: 0.4,
+            tension: 0.1,
             fill: false
             }));
             
@@ -1986,7 +2001,7 @@
             chartInstances.relativeEvolution = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: dates,
+                labels: dateLabels,
                 datasets: datasets
             },
             options: {
@@ -2007,7 +2022,7 @@
                     },
                     title: {
                     display: true,
-                    text: 'Ranking (lower is better)'
+                    text: 'Ranking'
                     }
                 }
                 },
@@ -2151,55 +2166,47 @@
             // Sort games by date
             const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // Track total points over time
+            // Get all unique dates
+            const allDates = [...new Set(sortedGames.map(g => g.date))].sort();
+            
+            // Track cumulative points for each player
+            const playerCumulativePoints = {};
             const playerEvolution = {};
-            const dates = [];
-            const lastKnownRank = {}; // Track last known rank for each player
+            const dateLabels = [];
             
-            sortedGames.forEach((game, gameIndex) => {
-            if (game.results && game.date) {
-            dates.push(new Date(game.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
-            
-            // Initialize player evolution arrays if needed
-            game.results.forEach(result => {
-            if (!playerEvolution[result.playerName]) {
-                playerEvolution[result.playerName] = [];
-            }
+            // Initialize all players
+            savedPlayerNames.forEach(playerName => {
+            playerCumulativePoints[playerName] = 0;
+            playerEvolution[playerName] = [];
             });
             
-            // Calculate cumulative total points up to this game
-            const playerStats = {};
-            sortedGames.slice(0, gameIndex + 1).forEach(g => {
-            if (g.results) {
-                g.results.forEach(result => {
-                if (!playerStats[result.playerName]) {
-                playerStats[result.playerName] = { points: 0 };
+            // Process each date
+            allDates.forEach((date) => {
+            dateLabels.push(new Date(date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
+            
+            // Find game for this date if it exists
+            const gameForDate = sortedGames.find(g => g.date === date);
+            
+            if (gameForDate && gameForDate.results) {
+                // Update cumulative points for players who played
+                gameForDate.results.forEach(result => {
+                if (playerCumulativePoints.hasOwnProperty(result.playerName)) {
+                    playerCumulativePoints[result.playerName] += result.points;
                 }
-                playerStats[result.playerName].points += result.points;
                 });
             }
-            });
             
-            // Rank players by total points
-            const ranked = Object.entries(playerStats)
-            .map(([name, stats]) => ({ 
-                name, 
-                totalPoints: stats.points,
-                rank: 0
-            }))
-            .sort((a, b) => b.totalPoints - a.totalPoints)
-            .map((player, index) => ({ ...player, rank: index + 1 }));
+            // Rank ALL players by cumulative points (including those who didn't play today)
+            const ranked = Object.entries(playerCumulativePoints)
+                .map(([name, points]) => ({ name, totalPoints: points }))
+                .sort((a, b) => b.totalPoints - a.totalPoints)
+                .map((player, index) => ({ ...player, rank: index + 1 }));
             
-            // Update position for all players
-            Object.keys(playerEvolution).forEach(playerName => {
-            const playerRank = ranked.find(r => r.name === playerName);
-            const currentRank = playerRank ? playerRank.rank : lastKnownRank[playerName];
-            playerEvolution[playerName].push(currentRank || null);
-            if (currentRank) {
-                lastKnownRank[playerName] = currentRank;
-            }
+            // Record rank for each player at this date
+            savedPlayerNames.forEach(playerName => {
+                const playerRank = ranked.find(r => r.name === playerName);
+                playerEvolution[playerName].push(playerRank ? playerRank.rank : null);
             });
-            }
             });
             
             // Get top 10 players by final rank
@@ -2207,29 +2214,27 @@
             .map(([name, ranks]) => ({ name, finalRank: ranks[ranks.length - 1] || null }))
             .filter(p => p.finalRank !== null)
             .sort((a, b) => a.finalRank - b.finalRank)
-            .slice(0, 10)
+            .slice(0, 15)
             .map(p => p.name);
             
-            const colors = [
-            'rgba(43, 122, 111, 1)',
-            'rgba(52, 152, 219, 1)',
-            'rgba(231, 76, 60, 1)',
-            'rgba(241, 196, 15, 1)',
-            'rgba(155, 89, 182, 1)',
-            'rgba(26, 188, 156, 1)',
-            'rgba(241, 148, 24, 1)',
-            'rgba(46, 204, 113, 1)',
-            'rgba(52, 73, 94, 1)',
-            'rgba(149, 165, 166, 1)'
+             const colors = [
+                'rgba(27, 158, 119, 1)',
+                'rgba(217, 95, 2, 1)',
+                'rgba(117, 112, 179, 1)',
+                'rgba(231, 41, 137, 1)',
+                'rgba(102, 166, 30, 1)'
             ];
+
+            const dashes = [[], [10, 10], [1, 1]];            
             
             const datasets = topPlayers.map((playerName, index) => ({
             label: playerName,
             data: playerEvolution[playerName],
-            borderColor: colors[index],
-            backgroundColor: colors[index].replace('1)', '0.1)'),
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length].replace('1)', '0.1)'),
+            borderDash: dashes[index % dashes.length],
             borderWidth: 2,
-            tension: 0.4,
+            tension: 0.1,
             fill: false
             }));
             
@@ -2244,35 +2249,35 @@
             chartInstances.absoluteEvolution = new Chart(ctx, {
             type: 'line',
             data: {
-            labels: dates,
-            datasets: datasets
+                labels: dateLabels,
+                datasets: datasets
             },
             options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-            legend: {
-                display: true,
-                position: 'top'
-            }
-            },
-            scales: {
-            y: {
-                beginAtZero: false,
-                reverse: true,
-                ticks: {
-                stepSize: 1
-                },
-                title: {
-                display: true,
-                text: 'Ranking (lower is better)'
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
                 }
-            }
-            },
-            interaction: {
-            mode: 'index',
-            intersect: false
-            }
+                },
+                scales: {
+                y: {
+                    beginAtZero: false,
+                    reverse: true,
+                    ticks: {
+                    stepSize: 1
+                    },
+                    title: {
+                    display: true,
+                    text: 'Ranking'
+                    }
+                }
+                },
+                interaction: {
+                mode: 'index',
+                intersect: false
+                }
             }
             });
         }
