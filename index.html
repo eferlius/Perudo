@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="./tucano.jpg">
     <style>
         :root {
-            --color-primary: #2b7a6f;
+            --color-primary: #00aeef;/*#2b7a6f;**/
             --color-primary-hover: #1f5a52;
             --color-gold: #f39c12;
             --color-silver: #b0b0b0;
@@ -792,7 +792,7 @@
             font-weight: 500;
         }
 
-        .podium-list .count {
+        .podium-list.count {
         background-color: var(--color-primary);
         color: white;
         width: 24px;
@@ -1032,35 +1032,6 @@
                     }).join('');
                 }
                 </script>
-
-                <h2>Classifica Punti Relativi</h2>
-                <table class="rel_points_leaderboard-table" id="rel_points_leaderboardTable">
-                    <thead>
-                        <tr>
-                            <th>Posizione</th>
-                            <th>Giocatore</th>
-                            <th>Partite</th>
-                            <th>Punti/Partite</th>
-                            <th>% Partite Giocate</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rel_points_leaderboardBody">
-                    </tbody>
-                </table>
-
-                <h2>Classifica Punti Totali</h2>
-                <table class="tot_points_leaderboard-table" id="tot_points_leaderboardTable">
-                    <thead>
-                        <tr>
-                            <th>Posizione</th>
-                            <th>Giocatore</th>
-                            <th>Partite</th>
-                            <th>Punti Totali</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tot_points_leaderboardBody">
-                    </tbody>
-                </table>
             </div>
         </div>
 
@@ -1086,41 +1057,134 @@
         <!-- TAB: Classifica -->
         <div id="classifica" class="tab-content">
             <div class="card">
-                <h2>🏆 Podio</h2>
-                <div class="podium-grid">
+                <!--
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                    <div>
+                        <label for="classificationStartDate">Data Inizio</label>
+                        <input type="date" id="classificationStartDate" />
+                    </div>
+                    <div>
+                        <label for="classificationEndDate">Data Fine</label>
+                        <input type="date" id="classificationEndDate" />
+                    </div>
+                </div>
+                
+                <script>
+                    function initializeDateFilters() {
+                        const startDateInput = document.getElementById('classificationStartDate');
+                        const endDateInput = document.getElementById('classificationEndDate');
+                        
+                        if (startDateInput && endDateInput) {
+                            // Set default dates (last 30 days and today)
+                            const today = new Date();
+                            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            
+                            startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                            endDateInput.value = today.toISOString().split('T')[0];
+                            
+                            // Add event listeners
+                            startDateInput.addEventListener('change', () => updateDashboard());
+                            endDateInput.addEventListener('change', () => updateDashboard());
+                        }
+                    }
+                    
+                    function getFilteredGames() {
+                        const startDate = document.getElementById('classificationStartDate')?.value;
+                        const endDate = document.getElementById('classificationEndDate')?.value;
+                        
+                        if (!startDate || !endDate) return games;
+                        
+                        return games.filter(game => game.date >= startDate && game.date <= endDate);
+                    }
+                </script>
+                -->
+                <h1>Risultati Relativi</h1>
+
+                <h2>Podio</h2>
+                <div class="podium-grid" id="relativePodium">
                     <div class="podium-card">
                         <h3>🥇 Primi Posti</h3>
-                        <ul class="podium-list" id="firstPlaceList"></ul>
+                        <ul class="podium-list" id="firstRelPlaceList"></ul>
                     </div>
                     <div class="podium-card">
                         <h3>🥈 Secondi Posti</h3>
-                        <ul class="podium-list" id="secondPlaceList"></ul>
+                        <ul class="podium-list" id="secondRelPlaceList"></ul>
                     </div>
                     <div class="podium-card">
                         <h3>🥉 Terzi Posti</h3>
-                        <ul class="podium-list" id="thirdPlaceList"></ul>
+                        <ul class="podium-list" id="thirdRelPlaceList"></ul>
                     </div>
                     <div class="podium-card">
                         <h3>🥴 Ultimi Posti</h3>
-                        <ul class="podium-list" id="lastPlaceList"></ul>
+                        <ul class="podium-list" id="lastRelPlaceList"></ul>
                     </div>
                 </div>
-                <h2>📊 Dashboard</h2>
-                <div class="dashboard-grid">
-                    <div class="chart-container">
-                        <h3>Punti Totali per Giocatore</h3>
+                
+                <h2>Classifica</h2>
+                <table class="rel_points_leaderboard-table" id="relativeClassification">
+                    <thead>
+                        <tr>
+                            <th>Posizione</th>
+                            <th>Giocatore</th>
+                            <th>Partite</th>
+                            <th>Punti/Partite</th>
+                            <th>% Partite Giocate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="relativeClassificationBody">
+                    </tbody>
+                </table>
+
+                <h2>Evoluzione Classifica</h2>
                         <div class="chart-wrapper">
-                            <canvas id="totalPointsChart"></canvas>
+                            <canvas id="relativeClassificationEvolution"></canvas>
                         </div>
+
+                <hr style="margin: 20px 0; border: 1px solid var(--color-border);" />
+                
+                <h1>Risultati Assoluti</h1>
+                <h2>Podio</h2>
+                <div class="podium-grid" id="absolutePodium">
+                    <div class="podium-card">
+                        <h3>🥇 Primi Posti</h3>
+                        <ul class="podium-list" id="firstAbsPlaceList"></ul>
                     </div>
-                    
-                    <div class="chart-container">
-                        <h3>Evoluzione Classifica nel Tempo</h3>
+                    <div class="podium-card">
+                        <h3>🥈 Secondi Posti</h3>
+                        <ul class="podium-list" id="secondAbsPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥉 Terzi Posti</h3>
+                        <ul class="podium-list" id="thirdAbsPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥴 Ultimi Posti</h3>
+                        <ul class="podium-list" id="lastAbsPlaceList"></ul>
+                    </div>
+                </div>
+
+                <h2>Classifica</h2>
+                <table class="tot_points_leaderboard-table" id="absoluteClassification">
+                    <thead>
+                        <tr>
+                            <th>Posizione</th>
+                            <th>Giocatore</th>
+                            <th>Partite</th>
+                            <th>Punti Totali</th>
+                        </tr>
+                    </thead>
+                    <tbody id="absoluteClassificationBody">
+                    </tbody>
+                </table>
+
+                <h2>Evoluzione Classifica</h2>
+                <div class="chart-container">
                         <div class="chart-wrapper">
-                            <canvas id="rankingEvolutionChart"></canvas>
+                            <canvas id="absoluteClassificationEvolution"></canvas>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -1219,8 +1283,6 @@
                     console.log('Nessuna partita trovata');
                 }
                 extractPlayerNamesFromGames();
-                update_tot_points_leaderboard();
-                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
                 
@@ -1244,8 +1306,6 @@
                     games = [];
                 }
                 extractPlayerNamesFromGames();
-                update_tot_points_leaderboard();
-                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
                 updateParticipationTable();
@@ -1348,8 +1408,6 @@
                 }
                 
                 extractPlayerNamesFromGames();
-                update_tot_points_leaderboard();
-                update_rel_points_leaderboard();
                 updateGameHistory();
                 updateDashboard();
                 updatePlayerNameList();
@@ -1405,7 +1463,7 @@
                 const tabId = e.target.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
                 if (tabId === 'home') updateDashboard();
-                if (tabId === 'classifica') update_tot_points_leaderboard();
+                if (tabId === 'classifica') updateDashboard();
                 if (tabId === 'storico') updateGameHistory();
                 if (tabId === 'giocatori') updatePlayerNameList();
             });
@@ -1573,11 +1631,22 @@
             });
 
             if (!isOrderValid) {
-                showAlert('I dadi devono essere in ordine crescente', 'error');
+                showAlert('I dadi devono essere in ordine decrescente', 'error');
                 return;
             }
+            
+            // Verify that dice count doesn't exceed maximum allowed per position
+            for (let i = 0; i < sortedPlayers.length; i++) {
+                // First place can have up to 5 dice
+                // Other places can have up to (position-1) * 5 dice
+                const maxDiceAllowed = Math.max(i, 1) * 5; 
+                if (sortedPlayers[i].nd > maxDiceAllowed) {
+                    showAlert(`${sortedPlayers[i].name} ha troppi dadi. Massimo consentito per ${i + 1}° la posizione: ${maxDiceAllowed}`, 'error');
+                    return;
+                }
+            }
 
-            // Verify first and second have the same dice count (required rule)
+            // Verify first and second have the same dice count
             if (sortedPlayers.length < 2 || sortedPlayers[0].nd !== sortedPlayers[1].nd) {
                 showAlert('Primo e secondo devono avere lo stesso numero di dadi', 'error');
                 return;
@@ -1624,8 +1693,7 @@
                 players = [];
                 renderPlayerInputs();
                 setDefaultDate();
-                update_tot_points_leaderboard();
-                update_rel_points_leaderboard();
+                updateDashboard();
                 updateGameHistory();
             }, 1500);
         }
@@ -1676,13 +1744,132 @@
                 console.error('Errore salvataggio giocatori:', error);
             });
         }
+        
+        
+        // Dashboard and Statistics
+        let chartInstances = {};
+        
+        function updateDashboard() {
+            updateParticipationTable();
+            updateRelativePodiumStats();
+            updateRelativeClassification();
+            updateRelativeClassificationEvolutionChart();
+            updateAbsolutePodiumStats();
+            updateAbsoluteClassification();
+            updateAbsoluteClassificationEvolutionChart();
+        }
 
-        // rel_points_leaderboard
-        function update_rel_points_leaderboard() {
-            const rel_points_leaderboardBody = document.getElementById('rel_points_leaderboardBody');
+        function updateRelativePodiumStats() {
+            const positionCounts = { 1: {}, 2: {}, 3: {}, last: {} };
+            const playerGamesCount = {};
+
+            games.forEach(game => {
+            if (game.results && game.results.length > 0) {
+            // Find the maximum position in this game (actual last place)
+            const maxPosition = Math.max(...game.results.map(r => r.position));
+            
+            game.results.forEach(result => {
+            playerGamesCount[result.playerName] = (playerGamesCount[result.playerName] || 0) + 1;
+
+            if (result.position === 1) {
+                positionCounts[1][result.playerName] = (positionCounts[1][result.playerName] || 0) + 1;
+            } else if (result.position === 2) {
+                positionCounts[2][result.playerName] = (positionCounts[2][result.playerName] || 0) + 1;
+            } else if (result.position === 3) {
+                positionCounts[3][result.playerName] = (positionCounts[3][result.playerName] || 0) + 1;
+            } else if (result.position === maxPosition) {
+                positionCounts.last[result.playerName] = (positionCounts.last[result.playerName] || 0) + 1;
+            }
+            });
+            }
+            });
+
+            // Convert counts to percentages based on total games played by each player
+            const percentagePositions = {
+            1: {},
+            2: {},
+            3: {},
+            last: {}
+            };
+
+            Object.keys(positionCounts).forEach(pos => {
+            Object.entries(positionCounts[pos]).forEach(([name, count]) => {
+            const totalGames = playerGamesCount[name] || 1;
+            const percentage = Math.floor((count / totalGames) * 100);
+            if (!percentagePositions[pos]) {
+            percentagePositions[pos] = {};
+            }
+            percentagePositions[pos][name] = percentage;
+            });
+            });
+
+            // Sort and group by percentage for each position
+            const sortedPositions = {
+            1: {},
+            2: {},
+            3: {},
+            last: {}
+            };
+
+            Object.keys(percentagePositions).forEach(pos => {
+            // Group players by percentage
+            const groupedByPercentage = {};
+            Object.entries(percentagePositions[pos]).forEach(([name, percentage]) => {
+            if (!groupedByPercentage[percentage]) {
+            groupedByPercentage[percentage] = [];
+            }
+            groupedByPercentage[percentage].push(name);
+            });
+
+            // Sort percentages descending
+            const sortedPercentages = Object.keys(groupedByPercentage)
+            .map(Number)
+            .sort((a, b) => b - a);
+
+            // Always show 5 percentage entries (pad with empty if needed)
+            const displayPercentages = sortedPercentages.slice(0, 5);
+            while (displayPercentages.length < 5) {
+            displayPercentages.push(null);
+            }
+
+            // Build result object with grouped names
+            displayPercentages.forEach(percentage => {
+            if (percentage !== null && groupedByPercentage[percentage]) {
+                const names = groupedByPercentage[percentage].sort();
+                sortedPositions[pos][names.join('<br>')] = percentage;
+            } else if (percentage === null) {
+                sortedPositions[pos]['-'] = '-';
+            }
+            });
+            });
+
+            // Update podium lists
+            updateRelPodiumList('firstRelPlaceList', sortedPositions[1]);
+            updateRelPodiumList('secondRelPlaceList', sortedPositions[2]);
+            updateRelPodiumList('thirdRelPlaceList', sortedPositions[3]);
+            updateRelPodiumList('lastRelPlaceList', sortedPositions.last);
+        }
+
+        function updateRelPodiumList(listId, positionData) {
+            const list = document.getElementById(listId);
+            list.innerHTML = Object.entries(positionData)
+            .map(([name, percentage]) => {
+            if (percentage === '-') {
+            return `<li style="color: #999;">-</li>`;
+            }
+            return `<li style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="player-name">${name}</span>
+            <span class="percentage" style="color: #eeeeee; font-weight: bold; border-radius: 50%; padding: 0; background-color: var(--color-primary); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 12px;">${percentage}%</span>
+            </li>`;
+            })
+            .join('') || '<li style="color: #999;">Nessun dato</li>';
+        }
+
+        function updateRelativeClassification() {
+            const relativeClassificationBody = document.getElementById('relativeClassificationBody');
             
             if (games.length === 0) {
-            rel_points_leaderboardBody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna partita ancora</td></tr>';
+            relativeClassificationBody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna partita ancora</td></tr>';
             return;
             }
 
@@ -1711,7 +1898,7 @@
             }))
             .sort((a, b) => b.avgPoints - a.avgPoints);
 
-            rel_points_leaderboardBody.innerHTML = sorted.map((player, index) => `
+            relativeClassificationBody.innerHTML = sorted.map((player, index) => `
             <tr>
                 <td class="rank">#${index + 1}</td>
                 <td>${player.name}</td>
@@ -1723,355 +1910,49 @@
             </tr>
             `).join('');
         }
-
-
-        // tot_points_leaderboard
-        function update_tot_points_leaderboard() {
-            const tot_points_leaderboardBody = document.getElementById('tot_points_leaderboardBody');
-            
-            if (games.length === 0) {
-                tot_points_leaderboardBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
-                return;
-            }
-
-            const playerStats = {};
-
-            games.forEach(game => {
-                if (game.results) {
-                    game.results.forEach(result => {
-                        if (!playerStats[result.playerName]) {
-                            playerStats[result.playerName] = { points: 0, games: 0 };
-                        }
-                        playerStats[result.playerName].points += result.points;
-                        playerStats[result.playerName].games += 1;
-                    });
-                }
-            });
-
-            const sorted = Object.entries(playerStats)
-                .map(([name, stats]) => ({ name, ...stats }))
-                .sort((a, b) => b.points - a.points);
-
-            tot_points_leaderboardBody.innerHTML = sorted.map((player, index) => `
-                <tr>
-                    <td class="rank">#${index + 1}</td>
-                    <td>${player.name}</td>
-                    <td>${player.games}</td>
-                    <td class="points ${player.points >= 0 ? 'positive' : 'negative'}">
-                        ${player.points.toFixed(2)}
-                    </td>
-                </tr>
-            `).join('');
-        }
         
-        // Dashboard and Statistics
-        let chartInstances = {};
-        
-        function updateDashboard() {
-            updatePodiumStats();
-            updateTotalPointsChart();
-            updateRankingEvolutionChart();
-        }
-        
-        function updatePodiumStats() {
-            const positions = { 1: {}, 2: {}, 3: {} };
-            
-            games.forEach(game => {
-                if (game.results) {
-                    game.results.forEach(result => {
-                        if (result.position >= 1 && result.position <= 3) {
-                            if (!positions[result.position][result.playerName]) {
-                                positions[result.position][result.playerName] = 0;
-                            }
-                            positions[result.position][result.playerName]++;
-                        }
-                    });
-                }
-            });
-            
-            // Update first place
-            const firstPlaceList = document.getElementById('firstPlaceList');
-            const firstPlaceGrouped = {};
-            Object.entries(positions[1]).forEach(([name, count]) => {
-                if (!firstPlaceGrouped[count]) {
-                    firstPlaceGrouped[count] = [];
-                }
-                firstPlaceGrouped[count].push(name);
-            });
-            const firstPlaceSorted = Object.keys(firstPlaceGrouped)
-                .map(Number)
-                .sort((a, b) => b - a)
-                .slice(0, 5);
-            let firstPlaceHtml = '';
-            firstPlaceSorted.forEach(count => {
-                const names = firstPlaceGrouped[count].sort();
-                firstPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
-            });
-            firstPlaceList.innerHTML = firstPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
-            
-            // Update second place
-            const secondPlaceList = document.getElementById('secondPlaceList');
-            const secondPlaceGrouped = {};
-            Object.entries(positions[2]).forEach(([name, count]) => {
-                if (!secondPlaceGrouped[count]) {
-                    secondPlaceGrouped[count] = [];
-                }
-                secondPlaceGrouped[count].push(name);
-            });
-            const secondPlaceSorted = Object.keys(secondPlaceGrouped)
-                .map(Number)
-                .sort((a, b) => b - a)
-                .slice(0, 5);
-            let secondPlaceHtml = '';
-            secondPlaceSorted.forEach(count => {
-                const names = secondPlaceGrouped[count].sort();
-                secondPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
-            });
-            secondPlaceList.innerHTML = secondPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
-            
-            // Update third place
-            const thirdPlaceList = document.getElementById('thirdPlaceList');
-            const thirdPlaceGrouped = {};
-            Object.entries(positions[3]).forEach(([name, count]) => {
-                if (!thirdPlaceGrouped[count]) {
-                    thirdPlaceGrouped[count] = [];
-                }
-                thirdPlaceGrouped[count].push(name);
-            });
-            const thirdPlaceSorted = Object.keys(thirdPlaceGrouped)
-                .map(Number)
-                .sort((a, b) => b - a)
-                .slice(0, 5);
-            let thirdPlaceHtml = '';
-            thirdPlaceSorted.forEach(count => {
-                const names = thirdPlaceGrouped[count].sort();
-                thirdPlaceHtml += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
-            });
-            thirdPlaceList.innerHTML = thirdPlaceHtml || '<li style="color: #999;">Nessun dato</li>';
-
-
-            // Update last place
-            const lastPlaceList = document.getElementById('lastPlaceList');
-            const lastPlaceData = {};
-            
-            games.forEach(game => {
-                if (game.results?.length) {
-                    const lastResult = game.results.reduce((prev, current) => 
-                        current.position > prev.position ? current : prev
-                    );
-                    if (lastResult?.playerName) {
-                        lastPlaceData[lastResult.playerName] = (lastPlaceData[lastResult.playerName] || 0) + 1;
-                    }
-                }
-            });
-            
-            // Group by count and sort
-            const groupedByCount = {};
-            Object.entries(lastPlaceData).forEach(([name, count]) => {
-                if (!groupedByCount[count]) {
-                    groupedByCount[count] = [];
-                }
-                groupedByCount[count].push(name); // Attach a new line to the name
-            });
-            
-            // Sort counts descending and build display
-            const sortedCounts = Object.keys(groupedByCount)
-                .map(Number)
-                .sort((a, b) => b - a)
-                .slice(0, 5);
-            
-            let html = '';
-            sortedCounts.forEach(count => {
-                const names = groupedByCount[count].sort();
-                html += `<li><span class="player-name">${names.join('<br>')}</span><span class="count">${count}</span></li>`;
-            });
-            
-            lastPlaceList.innerHTML = html || '<li style="color: #999;">Nessun dato</li>';
-        }
-        
-        function updateTotalPointsChart() {
-            const playerStats = {};
-            
-            games.forEach(game => {
-                if (game.results) {
-                    game.results.forEach(result => {
-                        if (!playerStats[result.playerName]) {
-                            playerStats[result.playerName] = 0;
-                        }
-                        playerStats[result.playerName] += result.points;
-                    });
-                }
-            });
-            
-            const sorted = Object.entries(playerStats)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-            
-            const ctx = document.getElementById('totalPointsChart');
-            if (!ctx) return;
-            
-            // Destroy existing chart
-            if (chartInstances.totalPoints) {
-                chartInstances.totalPoints.destroy();
-            }
-            
-            chartInstances.totalPoints = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(([name]) => name),
-                    datasets: [{
-                        label: 'Punti Totali',
-                        data: sorted.map(([, points]) => points),
-                        backgroundColor: 'rgba(43, 122, 111, 0.8)',
-                        borderColor: 'rgba(43, 122, 111, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateRankingEvolutionChart() {
+        function updateRelativeClassificationEvolutionChart() {
             // Sort games by date
             const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // Track cumulative points over time
+            // Track average points per game over time
             const playerEvolution = {};
             const dates = [];
             
-            sortedGames.forEach(game => {
-                if (game.results && game.date) {
-                    dates.push(new Date(game.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
-                    
-                    game.results.forEach(result => {
-                        if (!playerEvolution[result.playerName]) {
-                            playerEvolution[result.playerName] = [];
-                        }
-                    });
-                    
-                    // Update cumulative points for all players
-                    Object.keys(playerEvolution).forEach(playerName => {
-                        const lastPoints = playerEvolution[playerName].length > 0 
-                            ? playerEvolution[playerName][playerEvolution[playerName].length - 1]
-                            : 0;
-                        
-                        const gameResult = game.results.find(r => r.playerName === playerName);
-                        const newPoints = gameResult ? lastPoints + gameResult.points : lastPoints;
-                        
-                        playerEvolution[playerName].push(newPoints);
-                    });
-                }
-            });
-            
-            // Get top 5 players by final points
-            const topPlayers = Object.entries(playerEvolution)
-                .map(([name, points]) => ({ name, finalPoints: points[points.length - 1] || 0 }))
-                .sort((a, b) => b.finalPoints - a.finalPoints)
-                .slice(0, 5)
-                .map(p => p.name);
-            
-            const colors = [
-                'rgba(43, 122, 111, 1)',
-                'rgba(52, 152, 219, 1)',
-                'rgba(231, 76, 60, 1)',
-                'rgba(241, 196, 15, 1)',
-                'rgba(155, 89, 182, 1)'
-            ];
-            
-            const datasets = topPlayers.map((playerName, index) => ({
-                label: playerName,
-                data: playerEvolution[playerName],
-                borderColor: colors[index],
-                backgroundColor: colors[index].replace('1)', '0.1)'),
-                borderWidth: 2,
-                tension: 0.4,
-                fill: false
-            }));
-            
-            const ctx = document.getElementById('rankingEvolutionChart');
-            if (!ctx) return;
-            
-            // Destroy existing chart
-            if (chartInstances.rankingEvolution) {
-                chartInstances.rankingEvolution.destroy();
-            }
-            
-            chartInstances.rankingEvolution = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                }
-            });
-        }
-
-        function updateRankingEvolutionChart() {
-            // Sort games by date
-            const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // Track ranking position over time
-            const playerEvolution = {};
-            const dates = [];
-            
-            sortedGames.forEach(game => {
+            sortedGames.forEach((game, gameIndex) => {
             if (game.results && game.date) {
                 dates.push(new Date(game.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
                 
+                // Initialize player evolution arrays if needed
                 game.results.forEach(result => {
                 if (!playerEvolution[result.playerName]) {
                     playerEvolution[result.playerName] = [];
                 }
                 });
                 
-                // Calculate cumulative points for all players to determine ranking
+                // Calculate cumulative stats up to this game
                 const playerStats = {};
-                sortedGames.slice(0, sortedGames.indexOf(game) + 1).forEach(g => {
+                sortedGames.slice(0, gameIndex + 1).forEach(g => {
                 if (g.results) {
                     g.results.forEach(result => {
                     if (!playerStats[result.playerName]) {
-                        playerStats[result.playerName] = 0;
+                        playerStats[result.playerName] = { points: 0, games: 0 };
                     }
-                    playerStats[result.playerName] += result.points;
+                    playerStats[result.playerName].points += result.points;
+                    playerStats[result.playerName].games += 1;
                     });
                 }
                 });
                 
-                // Rank players by cumulative points
+                // Calculate average points and rank players
                 const ranked = Object.entries(playerStats)
-                .sort((a, b) => b[1] - a[1])
-                .map(([name], index) => ({ name, rank: index + 1 }));
+                .map(([name, stats]) => ({ 
+                    name, 
+                    avgPoints: stats.points / stats.games,
+                    rank: 0
+                }))
+                .sort((a, b) => b.avgPoints - a.avgPoints)
+                .map((player, index) => ({ ...player, rank: index + 1 }));
                 
                 // Update position for all players
                 Object.keys(playerEvolution).forEach(playerName => {
@@ -2081,7 +1962,7 @@
             }
             });
             
-            // Get top 5 players by final rank
+            // Get top 10 players by final rank
             const topPlayers = Object.entries(playerEvolution)
             .map(([name, ranks]) => ({ name, finalRank: ranks[ranks.length - 1] || null }))
             .filter(p => p.finalRank !== null)
@@ -2112,15 +1993,15 @@
             fill: false
             }));
             
-            const ctx = document.getElementById('rankingEvolutionChart');
+            const ctx = document.getElementById('relativeClassificationEvolution');
             if (!ctx) return;
             
             // Destroy existing chart
-            if (chartInstances.rankingEvolution) {
-            chartInstances.rankingEvolution.destroy();
+            if (chartInstances.relativeEvolution) {
+            chartInstances.relativeEvolution.destroy();
             }
             
-            chartInstances.rankingEvolution = new Chart(ctx, {
+            chartInstances.relativeEvolution = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: dates,
@@ -2137,10 +2018,14 @@
                 },
                 scales: {
                 y: {
-                    beginAtZero: true,
+                    beginAtZero: false,
                     reverse: true,
                     ticks: {
                     stepSize: 1
+                    },
+                    title: {
+                    display: true,
+                    text: 'Ranking (lower is better)'
                     }
                 }
                 },
@@ -2152,6 +2037,258 @@
             });
         }
 
+        function updateAbsolutePodiumStats() {
+            const positionCounts = { 1: {}, 2: {}, 3: {}, last: {} };
+
+            games.forEach(game => {
+            if (game.results && game.results.length > 0) {
+            // Find the maximum position in this game (actual last place)
+            const maxPosition = Math.max(...game.results.map(r => r.position));
+            
+            game.results.forEach(result => {
+            if (result.position === 1) {
+            positionCounts[1][result.playerName] = (positionCounts[1][result.playerName] || 0) + 1;
+            } else if (result.position === 2) {
+            positionCounts[2][result.playerName] = (positionCounts[2][result.playerName] || 0) + 1;
+            } else if (result.position === 3) {
+            positionCounts[3][result.playerName] = (positionCounts[3][result.playerName] || 0) + 1;
+            } else if (result.position === maxPosition) {
+            positionCounts.last[result.playerName] = (positionCounts.last[result.playerName] || 0) + 1;
+            }
+            });
+            }
+            });
+
+            // Sort and group by count for each position
+            const sortedPositions = {
+            1: {},
+            2: {},
+            3: {},
+            last: {}
+            };
+
+            Object.keys(positionCounts).forEach(pos => {
+            // Group players by count
+            const groupedByCount = {};
+            Object.entries(positionCounts[pos]).forEach(([name, count]) => {
+            if (!groupedByCount[count]) {
+            groupedByCount[count] = [];
+            }
+            groupedByCount[count].push(name);
+            });
+
+            // Sort counts descending
+            const sortedCounts = Object.keys(groupedByCount)
+            .map(Number)
+            .sort((a, b) => b - a);
+
+            // Always show 5 count entries (pad with empty if needed)
+            const displayCounts = sortedCounts.slice(0, 5);
+            while (displayCounts.length < 5) {
+            displayCounts.push(null);
+            }
+
+            // Build result object with grouped names
+            displayCounts.forEach(count => {
+            if (count !== null && groupedByCount[count]) {
+            const names = groupedByCount[count].sort();
+            sortedPositions[pos][names.join('<br>')] = count;
+            } else if (count === null) {
+            sortedPositions[pos]['-'] = '-';
+            }
+            });
+            });
+
+            // Update podium lists
+            updateAbsPodiumList('firstAbsPlaceList', sortedPositions[1]);
+            updateAbsPodiumList('secondAbsPlaceList', sortedPositions[2]);
+            updateAbsPodiumList('thirdAbsPlaceList', sortedPositions[3]);
+            updateAbsPodiumList('lastAbsPlaceList', sortedPositions.last);
+        }
+
+        function updateAbsPodiumList(listId, positionData) {
+            const list = document.getElementById(listId);
+            list.innerHTML = Object.entries(positionData)
+            .map(([name, count]) => {
+            if (count === '-') {
+            return `<li style="color: #999;">-</li>`;
+            }
+            return `<li style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="player-name">${name}</span>
+            <span class="count" style="color: #eeeeee; font-weight: bold; border-radius: 50%; padding: 0; background-color: var(--color-primary); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 12px;">${count}</span>
+            </li>`;
+            })
+            .join('') || '<li style="color: #999;">Nessun dato</li>';
+        }
+
+        function updateAbsoluteClassification() {
+            const absoluteClassificationBody = document.getElementById('absoluteClassificationBody');
+            
+            if (games.length === 0) {
+                absoluteClassificationBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna partita ancora</td></tr>';
+                return;
+            }
+
+            const playerStats = {};
+
+            games.forEach(game => {
+                if (game.results) {
+                    game.results.forEach(result => {
+                        if (!playerStats[result.playerName]) {
+                            playerStats[result.playerName] = { points: 0, games: 0 };
+                        }
+                        playerStats[result.playerName].points += result.points;
+                        playerStats[result.playerName].games += 1;
+                    });
+                }
+            });
+
+            const sorted = Object.entries(playerStats)
+                .map(([name, stats]) => ({ name, ...stats }))
+                .sort((a, b) => b.points - a.points);
+
+            absoluteClassificationBody.innerHTML = sorted.map((player, index) => `
+                <tr>
+                    <td class="rank">#${index + 1}</td>
+                    <td>${player.name}</td>
+                    <td>${player.games}</td>
+                    <td class="points ${player.points >= 0 ? 'positive' : 'negative'}">
+                        ${player.points.toFixed(2)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function updateAbsoluteClassificationEvolutionChart() {
+            // Sort games by date
+            const sortedGames = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Track total points over time
+            const playerEvolution = {};
+            const dates = [];
+            const lastKnownRank = {}; // Track last known rank for each player
+            
+            sortedGames.forEach((game, gameIndex) => {
+            if (game.results && game.date) {
+            dates.push(new Date(game.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
+            
+            // Initialize player evolution arrays if needed
+            game.results.forEach(result => {
+            if (!playerEvolution[result.playerName]) {
+                playerEvolution[result.playerName] = [];
+            }
+            });
+            
+            // Calculate cumulative total points up to this game
+            const playerStats = {};
+            sortedGames.slice(0, gameIndex + 1).forEach(g => {
+            if (g.results) {
+                g.results.forEach(result => {
+                if (!playerStats[result.playerName]) {
+                playerStats[result.playerName] = { points: 0 };
+                }
+                playerStats[result.playerName].points += result.points;
+                });
+            }
+            });
+            
+            // Rank players by total points
+            const ranked = Object.entries(playerStats)
+            .map(([name, stats]) => ({ 
+                name, 
+                totalPoints: stats.points,
+                rank: 0
+            }))
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((player, index) => ({ ...player, rank: index + 1 }));
+            
+            // Update position for all players
+            Object.keys(playerEvolution).forEach(playerName => {
+            const playerRank = ranked.find(r => r.name === playerName);
+            const currentRank = playerRank ? playerRank.rank : lastKnownRank[playerName];
+            playerEvolution[playerName].push(currentRank || null);
+            if (currentRank) {
+                lastKnownRank[playerName] = currentRank;
+            }
+            });
+            }
+            });
+            
+            // Get top 10 players by final rank
+            const topPlayers = Object.entries(playerEvolution)
+            .map(([name, ranks]) => ({ name, finalRank: ranks[ranks.length - 1] || null }))
+            .filter(p => p.finalRank !== null)
+            .sort((a, b) => a.finalRank - b.finalRank)
+            .slice(0, 10)
+            .map(p => p.name);
+            
+            const colors = [
+            'rgba(43, 122, 111, 1)',
+            'rgba(52, 152, 219, 1)',
+            'rgba(231, 76, 60, 1)',
+            'rgba(241, 196, 15, 1)',
+            'rgba(155, 89, 182, 1)',
+            'rgba(26, 188, 156, 1)',
+            'rgba(241, 148, 24, 1)',
+            'rgba(46, 204, 113, 1)',
+            'rgba(52, 73, 94, 1)',
+            'rgba(149, 165, 166, 1)'
+            ];
+            
+            const datasets = topPlayers.map((playerName, index) => ({
+            label: playerName,
+            data: playerEvolution[playerName],
+            borderColor: colors[index],
+            backgroundColor: colors[index].replace('1)', '0.1)'),
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false
+            }));
+            
+            const ctx = document.getElementById('absoluteClassificationEvolution');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (chartInstances.absoluteEvolution) {
+            chartInstances.absoluteEvolution.destroy();
+            }
+            
+            chartInstances.absoluteEvolution = new Chart(ctx, {
+            type: 'line',
+            data: {
+            labels: dates,
+            datasets: datasets
+            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+            },
+            scales: {
+            y: {
+                beginAtZero: false,
+                reverse: true,
+                ticks: {
+                stepSize: 1
+                },
+                title: {
+                display: true,
+                text: 'Ranking (lower is better)'
+                }
+            }
+            },
+            interaction: {
+            mode: 'index',
+            intersect: false
+            }
+            }
+            });
+        }
+        
         // Game history
         function updateGameHistory() {
             const historyList = document.getElementById('gameHistoryList');
