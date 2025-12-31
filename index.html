@@ -24,6 +24,12 @@
             --spacing-sm: 8px;
             --spacing-md: 16px;
             --spacing-lg: 24px;
+            --graph-colours: ['rgba(27, 158, 119, 1)',
+            'rgba(217, 95, 2, 1)',
+            'rgba(117, 112, 179, 1)',
+            'rgba(231, 41, 137, 1)',
+            'rgba(102, 166, 30, 1)'];
+            --graph-dashes: [[],[10, 10], [1,1]]
         }
 
         * {
@@ -833,7 +839,349 @@
         <!-- TAB: Home (Dashboard) -->
         <div id="home" class="tab-content active">
             <div class="card">
-                <h2>Tabellone</h2>
+                <h2>Tavolo</h2>
+                <div class="podium-grid">
+                    <div class="podium-card">
+                        <h3>👥 Tutti i Giocatori</h3>
+                        <ul class="podium-list" id="allPlayersList"></ul>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--spacing-md); margin-top: var(--spacing-lg);">
+                    <button class="btn btn-primary btn-full" id="shufflePlayersBtn">Mischia Giocatori</button>
+                    <button class="btn btn-primary btn-full" id="addPlayerBtn2">Aggiungi Giocatori</button>
+                    <button class="btn btn-primary btn-full" id="updateTableBtn">Aggiorna Tavolo</button>
+                </div>
+                
+                <div id="shuffledPlayersContainer" style="display: none; margin-top: var(--spacing-lg);">
+                    <h3>Ordine Casuale</h3>
+                    <ol class="podium-list" id="shuffledPlayersList"></ol>
+                </div>
+
+                <script>
+                let selectedPlayers = new Set();
+                let previousSelectedPlayers = new Set();
+                let shuffledOrder = [];
+
+                function updateAllPlayersList() {
+                    const list = document.getElementById('allPlayersList');
+                    if (!list) return;
+                    
+                    if (savedPlayerNames.length === 0) {
+                        list.innerHTML = '<li style="color: #999;">Nessun giocatore nel database</li>';
+                        return;
+                    }
+                    
+                    list.innerHTML = savedPlayerNames.map(playerName => {
+                        const gameCount = games.reduce((count, game) => {
+                            return count + (game.results?.some(r => r.playerName === playerName) ? 1 : 0);
+                        }, 0);
+                        
+                        const isSelected = selectedPlayers.has(playerName);
+                        
+                        return `<li style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: ${isSelected ? 'rgba(0, 174, 239, 0.1)' : '#f9f9f9'}; border-radius: 6px; margin-bottom: 8px; border: ${isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)'};">
+                            <span class="player-name">${playerName}</span>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <!--<span style="color: white; font-weight: bold; border-radius: 50%; padding: 0; background-color: var(--color-primary); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 12px;">${gameCount}</span>-->
+                                <input type="checkbox" class="player-toggle" data-player="${playerName}" ${isSelected ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;" />
+                            </div>
+                        </li>`;
+                    }).join('');
+                    
+                    // Add event listeners to toggles
+                    document.querySelectorAll('.player-toggle').forEach(toggle => {
+                        toggle.addEventListener('change', function() {
+                            const playerName = this.dataset.player;
+                            if (this.checked) {
+                                selectedPlayers.add(playerName);
+                            } else {
+                                selectedPlayers.delete(playerName);
+                            }
+                            updateAllPlayersList();
+                        });
+                    });
+                }
+
+                function shufflePlayers() {
+                    const container = document.getElementById('shuffledPlayersContainer');
+                    const list = document.getElementById('shuffledPlayersList');
+                    
+                    if (selectedPlayers.size === 0) {
+                        alert('Seleziona almeno un giocatore');
+                        return;
+                    }
+                    
+                    // Convert to array and shuffle
+                    shuffledOrder = Array.from(selectedPlayers);
+                    for (let i = shuffledOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+                    }
+                    
+                    previousSelectedPlayers = new Set(selectedPlayers);
+                    displayShuffledList(list, container);
+                }
+
+                function displayShuffledList(list, container) {
+                    list.innerHTML = shuffledOrder.map((playerName, index) => {
+                        return `<li style="padding: 12px; background-color: #f9f9f9; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid var(--color-primary);">
+                            <span style="font-weight: 600; color: var(--color-primary); margin-right: 12px;">${index + 1}°</span>
+                            <span>${playerName}</span>
+                        </li>`;
+                    }).join('');
+                    
+                    container.style.display = 'block';
+                }
+
+                function addPlayerToShuffledList() {
+                    const container = document.getElementById('shuffledPlayersContainer');
+                    const list = document.getElementById('shuffledPlayersList');
+                    
+                    if (shuffledOrder.length === 0) {
+                        alert('Esegui prima "Mischia Giocatori"');
+                        return;
+                    }
+                    
+                    // Find newly selected players
+                    const newPlayers = Array.from(selectedPlayers).filter(p => !previousSelectedPlayers.has(p));
+                    
+                    if (newPlayers.length === 0) {
+                        alert('Seleziona un nuovo giocatore da aggiungere');
+                        return;
+                    }
+                    
+                    // Add each new player at a random position
+                    newPlayers.forEach(playerName => {
+                        const randomIndex = Math.floor(Math.random() * (shuffledOrder.length + 1));
+                        shuffledOrder.splice(randomIndex, 0, playerName);
+                    });
+                    
+                    previousSelectedPlayers = new Set(selectedPlayers);
+                    displayShuffledList(list, container);
+                }
+
+                function updateTable() {
+                    const container = document.getElementById('shuffledPlayersContainer');
+                    const list = document.getElementById('shuffledPlayersList');
+                    
+                    if (shuffledOrder.length === 0) {
+                        alert('Esegui prima "Mischia Giocatori"');
+                        return;
+                    }
+                    
+                    // Remove players that are no longer selected
+                    shuffledOrder = shuffledOrder.filter(playerName => selectedPlayers.has(playerName));
+                    
+                    if (shuffledOrder.length === 0) {
+                        container.style.display = 'none';
+                        alert('Nessun giocatore rimasto nella lista');
+                        return;
+                    }
+                    
+                    previousSelectedPlayers = new Set(selectedPlayers);
+                    displayShuffledList(list, container);
+                }
+
+                // Setup button listeners
+                document.addEventListener('DOMContentLoaded', function() {
+                    const shuffleBtn = document.getElementById('shufflePlayersBtn');
+                    if (shuffleBtn) {
+                        shuffleBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            shufflePlayers();
+                        });
+                    }
+                    
+                    const addPlayerBtn = document.getElementById('addPlayerBtn2');
+                    if (addPlayerBtn) {
+                        addPlayerBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            addPlayerToShuffledList();
+                        });
+                    }
+
+                    const updateTableBtn = document.getElementById('updateTableBtn');
+                    if (updateTableBtn) {
+                        updateTableBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            updateTable();
+                        });
+                    }
+                });
+
+                // Update when app initializes and data changes
+                const originalLoadFromFirebase = loadFromFirebase;
+                loadFromFirebase = function() {
+                    originalLoadFromFirebase();
+                    setTimeout(() => updateAllPlayersList(), 100);
+                };
+
+                const originalUpdateGameHistory = updateGameHistory;
+                updateGameHistory = function() {
+                    originalUpdateGameHistory();
+                    updateAllPlayersList();
+                };
+                </script>
+                </script>
+            </div>
+        </div>
+
+        <!-- TAB: Nuova Partita -->
+        <div id="nuova-partita" class="tab-content">
+            <div class="card">
+                <h2>Nuova Partita</h2>
+                <div class="form-group">
+                    <label>Data della partita</label>
+                    <input type="date" id="gameDate" />
+                    <div id="dateAlert" style="margin-top: 8px;"></div>
+                </div>
+
+                <h2>Giocatori</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Se un giocatore abbandona il gioco, è come se perdesse tutti i dadi che rimangono uno dopo l'altro.<br>
+                    <br>
+                    Se due o più giocatori abbandonano il gioco contemporaneamente, è come se perdessero i dadi a turno, partendo da quello che ha meno dadi rimasti.<br>
+                    Nel caso in cui due o più giocatori abbiano lo stesso numero di dadi, parte quello che ha perso il dado per primo.<br>
+                    Nel caso in cui non sia possibile determinare chi perde il primo dado, i giocatori lanciano un dado ciascuno e chi ottiene il numero più basso perde il dado per primo.<br>
+                </p>
+                <div class="players-list" id="playersList"></div>
+                <button class="btn btn-secondary btn-full" id="addPlayerBtn">+ Aggiungi Giocatore</button>             
+                <button class="btn btn-primary btn-full" id="saveGameBtn" style="margin-top: var(--spacing-lg);">Salva Partita</button>
+                <div id="alert"></div>
+            </div>
+        </div>
+
+        <!-- TAB: Classifica -->
+        <div id="classifica" class="tab-content">
+            <div class="card">
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                    <div>
+                        <label for="classificationStartDate">Data Inizio</label>
+                        <input type="date" id="classificationStartDate"/>
+                    </div>
+                    <div>
+                        <label for="classificationEndDate">Data Fine</label>
+                        <input type="date" id="classificationEndDate"/>
+                    </div>
+                </div>
+
+                <h1>Risultati Relativi</h1>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    I risultati relativi mostrano i punti e i piazzamenti tenendo conto del numero di partite giocate.</p>
+
+                <h2>Podio Relativo</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il podio relativo viene calcolato dividendo il numero di piazzamenti ottenuti per il numero di partite giocate.</p>
+                <div class="podium-grid" id="relativePodium">
+                    <div class="podium-card">
+                        <h3>🥇 Primi Posti</h3>
+                        <ul class="podium-list" id="firstRelPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥈 Secondi Posti</h3>
+                        <ul class="podium-list" id="secondRelPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥉 Terzi Posti</h3>
+                        <ul class="podium-list" id="thirdRelPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥴 Ultimi Posti</h3>
+                        <ul class="podium-list" id="lastRelPlaceList"></ul>
+                    </div>
+                </div>
+                
+                <h2>Classifica Relativa</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il punteggio viene calcolato sommando i punti ottenuti in ogni partita e dividendolo per le partite giocate.</p>
+                <table class="leaderboard-table" id="relativeClassification">
+                    <thead>
+                        <tr>
+                            <th>Posizione</th>
+                            <th>Giocatore</th>
+                            <th>Punti/Partite</th>
+                            <th>Partite (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="relativeClassificationBody">
+                    </tbody>
+                </table>
+
+                <h2>Evoluzione Classifica Relativa</h2>
+                <div class="chart-wrapper">
+                    <canvas id="relativeClassificationEvolution"></canvas>
+                </div>
+
+                <hr style="margin: 20px 0; border: 1px solid var(--color-border);" />
+                
+                <h1>Risultati Assoluti</h1>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    I risultati assoluti mostrano i punti e i piazzamenti senza tenere conto del numero di partite giocate.</p>
+                <h2>Podio Assoluto</h2>
+                 <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il podio assoluto mostra i piazzamenti ottenuti senza tenere conto del numero di partite giocate.</p>
+                <div class="podium-grid" id="absolutePodium">
+                    <div class="podium-card">
+                        <h3>🥇 Primi Posti</h3>
+                        <ul class="podium-list" id="firstAbsPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥈 Secondi Posti</h3>
+                        <ul class="podium-list" id="secondAbsPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥉 Terzi Posti</h3>
+                        <ul class="podium-list" id="thirdAbsPlaceList"></ul>
+                    </div>
+                    <div class="podium-card">
+                        <h3>🥴 Ultimi Posti</h3>
+                        <ul class="podium-list" id="lastAbsPlaceList"></ul>
+                    </div>
+                </div>
+
+                <h2>Classifica Assoluta</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
+                    Il punteggio viene calcolato sommando i punti ottenuti in ogni partita.</p>
+                <table class="leaderboard-table" id="absoluteClassification">
+                    <thead>
+                        <tr>
+                            <th>Posizione</th>
+                            <th>Giocatore</th>
+                            <th>Punti Totali</th>
+                            <th>Partite (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="absoluteClassificationBody">
+                    </tbody>
+                </table>
+
+                <h2>Evoluzione Classifica</h2>
+                <div class="chart-wrapper">
+                    <canvas id="absoluteClassificationEvolution"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Giocatori -->
+        <div id="giocatori" class="tab-content">
+            <div class="card">
+                <h2>Gestione Giocatori</h2>
+                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">Aggiungi o rimuovi giocatori dal database. Questi nomi appariranno nel menu a tendina quando crei una nuova partita.</p>
+                
+                <div class="add-player-form">
+                    <input type="text" id="newPlayerName" placeholder="Nome nuovo giocatore" />
+                    <button class="btn btn-primary" id="addPlayerNameBtn">Aggiungi</button>
+                </div>
+                
+                <h3>Giocatori Salvati (<span id="playerCount">0</span>)</h3>
+                <div class="player-name-list" id="playerNameList"></div>
+            </div>
+        </div>
+
+        <!-- TAB: Storico -->
+        <div id="storico" class="tab-content">
+            <div class="card">
+                    <h2>Tabellone</h2>
                 <div style="overflow-x: auto; margin-bottom: var(--spacing-lg);">
                     <table class="participation-table" id="participationTable">
                         <thead id="participationTableHead">
@@ -929,227 +1277,7 @@
                 .participation-table tbody tr:hover {
                     background-color: #f9f9f9;
                 }
-                </style>
-
-                <script>
-                function getPlayerInitials(fullName) {
-                    const parts = fullName.trim().split(/\s+/);
-                    if (parts.length >= 2) {
-                        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-                    }
-                    return fullName.charAt(0).toUpperCase();
-                }
-
-                function updateParticipationTable() {
-                    if (games.length === 0 || savedPlayerNames.length === 0) {
-                        const thead = document.getElementById('participationTableHead');
-                        const tbody = document.getElementById('participationTableBody');
-                        if (thead) thead.innerHTML = '';
-                        if (tbody) tbody.innerHTML = '<tr><td colspan="100" class="empty-state">Nessuna partita ancora</td></tr>';
-                        return;
-                    }
-                    
-                    // Build table header dynamically
-                    const thead = document.getElementById('participationTableHead');
-                    thead.innerHTML = `
-                        <tr>
-                            <th>Data</th>
-                            ${savedPlayerNames.map(name => {
-                                const parts = name.trim().split(/\s+/);
-                                return `<th>${parts.join('<br>')}</th>`;
-                            }).join('')}
-                        </tr>
-                    `;
-                    
-                    // Get all unique dates and sort them
-                    const dates = [...new Set(games.map(g => g.date))].sort().reverse();
-                    
-                    // Build table body
-                    const tbody = document.getElementById('participationTableBody');
-                    tbody.innerHTML = dates.map(date => {
-                        const game = games.find(g => g.date === date);
-                        const dateStr = new Date(date).toLocaleDateString('it-IT');
-                        
-                        return `
-                            <tr>
-                                <td>${dateStr}</td>
-                                ${savedPlayerNames.map(playerName => {
-                                    const result = game?.results?.find(r => r.playerName === playerName);
-                                    if (result) {
-                                        const maxPosition = Math.max(...game.results.map(r => r.position));
-                                        const badgeClass =  result.position === maxPosition ? 'last-place' : 
-                                                            result.position === 1 ? 'first-place' :
-                                                            result.position === 2 ? 'second-place' :
-                                                            result.position === 3 ? 'third-place' : 
-                                                            'played';
-                                        return `<td><span class="participation-badge ${badgeClass}">${result.position}°</span></td>`;
-                                    } else {
-                                        return `<td><span class="participation-badge not-played">NA</span></td>`;
-                                    }
-                                }).join('')}
-                            </tr>
-                        `;
-                    }).join('');
-                }
-                </script>
-            </div>
-        </div>
-
-        <!-- TAB: Nuova Partita -->
-        <div id="nuova-partita" class="tab-content">
-            <div class="card">
-                <h2>Nuova Partita</h2>
-                <div class="form-group">
-                    <label>Data della partita</label>
-                    <input type="date" id="gameDate" />
-                    <div id="dateAlert" style="margin-top: 8px;"></div>
-                </div>
-
-                <h2>Giocatori</h2>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    Se un giocatore abbandona il gioco, è come se perdesse tutti i dadi che rimangono uno dopo l'altro.<br>
-                    <br>
-                    Se due o più giocatori abbandonano il gioco contemporaneamente, è come se perdessero i dadi a turno, partendo da quello che ha meno dadi rimasti.<br>
-                    Nel caso in cui due o più giocatori abbiano lo stesso numero di dadi, parte quello che ha perso il dado per primo.<br>
-                    Nel caso in cui non sia possibile determinare chi ha perso il dado per primo, i giocatori lanciano un dado ciascuno e chi ottiene il numero più basso perde il dado per primo.<br>
-                </p>
-                <div class="players-list" id="playersList"></div>
-                <button class="btn btn-secondary btn-full" id="addPlayerBtn">+ Aggiungi Giocatore</button>             
-                <button class="btn btn-primary btn-full" id="saveGameBtn" style="margin-top: var(--spacing-lg);">Salva Partita</button>
-                <div id="alert"></div>
-            </div>
-        </div>
-
-        <!-- TAB: Classifica -->
-        <div id="classifica" class="tab-content">
-            <div class="card">
-                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
-                    <div>
-                        <label for="classificationStartDate">Data Inizio</label>
-                        <input type="date" id="classificationStartDate"/>
-                    </div>
-                    <div>
-                        <label for="classificationEndDate">Data Fine</label>
-                        <input type="date" id="classificationEndDate"/>
-                    </div>
-                </div>
-
-                <h1>Risultati Relativi</h1>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    I risultati relativi mostrano i punti e i piazzamenti tenendo conto delle partite giocate.</p>
-
-                <h2>Podio Relativo</h2>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    Il podio relativo viene calcolato dividendo il numero di piazzamenti per il numero di partite giocate.</p>
-                <div class="podium-grid" id="relativePodium">
-                    <div class="podium-card">
-                        <h3>🥇 Primi Posti</h3>
-                        <ul class="podium-list" id="firstRelPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥈 Secondi Posti</h3>
-                        <ul class="podium-list" id="secondRelPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥉 Terzi Posti</h3>
-                        <ul class="podium-list" id="thirdRelPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥴 Ultimi Posti</h3>
-                        <ul class="podium-list" id="lastRelPlaceList"></ul>
-                    </div>
-                </div>
-                
-                <h2>Classifica Relativa</h2>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    Il punteggio viene calcolato dividendo il numero totale di punti per il numero di partite giocate.</p>
-                <table class="leaderboard-table" id="relativeClassification">
-                    <thead>
-                        <tr>
-                            <th>Posizione</th>
-                            <th>Giocatore</th>
-                            <th>Punti/Partite</th>
-                            <th>Partite (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="relativeClassificationBody">
-                    </tbody>
-                </table>
-
-                <h2>Evoluzione Classifica Relativa</h2>
-                <div class="chart-wrapper">
-                    <canvas id="relativeClassificationEvolution"></canvas>
-                </div>
-
-                <hr style="margin: 20px 0; border: 1px solid var(--color-border);" />
-                
-                <h1>Risultati Assoluti</h1>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    I risultati assoluti mostrano i punti e i piazzamenti senza tenere conto delle partite giocate.</p>
-                <h2>Podio Assoluto</h2>
-                 <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    Il podio assoluto mostra i piazzamenti senza tenere conto delle partite giocate.</p>
-                <div class="podium-grid" id="absolutePodium">
-                    <div class="podium-card">
-                        <h3>🥇 Primi Posti</h3>
-                        <ul class="podium-list" id="firstAbsPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥈 Secondi Posti</h3>
-                        <ul class="podium-list" id="secondAbsPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥉 Terzi Posti</h3>
-                        <ul class="podium-list" id="thirdAbsPlaceList"></ul>
-                    </div>
-                    <div class="podium-card">
-                        <h3>🥴 Ultimi Posti</h3>
-                        <ul class="podium-list" id="lastAbsPlaceList"></ul>
-                    </div>
-                </div>
-
-                <h2>Classifica Assoluta</h2>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">
-                    Il punteggio viene calcolato sommando il numero di punti ottenuti in ogni partita.</p>
-                <table class="leaderboard-table" id="absoluteClassification">
-                    <thead>
-                        <tr>
-                            <th>Posizione</th>
-                            <th>Giocatore</th>
-                            <th>Punti Totali</th>
-                            <th>Partite (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="absoluteClassificationBody">
-                    </tbody>
-                </table>
-
-                <h2>Evoluzione Classifica</h2>
-                <div class="chart-wrapper">
-                    <canvas id="absoluteClassificationEvolution"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB: Giocatori -->
-        <div id="giocatori" class="tab-content">
-            <div class="card">
-                <h2>Gestione Giocatori</h2>
-                <p style="color: var(--color-text-light); margin-bottom: var(--spacing-lg);">Aggiungi o rimuovi giocatori dal database. Questi nomi appariranno nel menu a tendina quando crei una nuova partita.</p>
-                
-                <div class="add-player-form">
-                    <input type="text" id="newPlayerName" placeholder="Nome nuovo giocatore" />
-                    <button class="btn btn-primary" id="addPlayerNameBtn">Aggiungi</button>
-                </div>
-                
-                <h3>Giocatori Salvati (<span id="playerCount">0</span>)</h3>
-                <div class="player-name-list" id="playerNameList"></div>
-            </div>
-        </div>
-
-        <!-- TAB: Storico -->
-        <div id="storico" class="tab-content">
-            <div class="card">
+                </style> 
                 <h2>Storico Partite</h2>
                 <div id="gameHistoryList"></div>
             </div>
@@ -1201,6 +1329,7 @@
             setEndDate();
             updateDashboard();
             updateParticipationTable();
+            updateAllPlayersList();
         }
 
         // Firebase Functions
@@ -1234,7 +1363,8 @@
                 updateDashboard();
                 
                 // Update participation table AFTER both player names and games are loaded
-                updateParticipationTable();
+                updateDashboard();
+                updateAllPlayersList();
                 updateSyncStatus();
             }).catch(error => {
                 console.error('Errore caricamento dati:', error);
@@ -1255,7 +1385,6 @@
                 extractPlayerNamesFromGames();
                 updateGameHistory();
                 updateDashboard();
-                updateParticipationTable();
             }, error => {
                 console.error('Errore listener partite:', error);
             });
@@ -1437,7 +1566,7 @@
                 e.target.classList.add('active');
                 const tabId = e.target.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
-                if (tabId === 'home') updateParticipationTable();
+                if (tabId === 'home') updateAllPlayersList();
                 if (tabId === 'classifica') updateDashboard();
                 if (tabId === 'storico') updateGameHistory();
                 if (tabId === 'giocatori') updatePlayerNameList();
@@ -1744,13 +1873,65 @@
             });
             
             // Pass filtered games to update functions instead of modifying global
-            updateParticipationTable();
+            updateParticipationTable(filteredGames);
             updateRelativePodiumStats(filteredGames);
             updateRelativeClassification(filteredGames);
             updateRelativeClassificationEvolutionChart(filteredGames);
             updateAbsolutePodiumStats(filteredGames);
             updateAbsoluteClassification(filteredGames);
             updateAbsoluteClassificationEvolutionChart(filteredGames);
+        }
+
+        function updateParticipationTable(games) {
+            if (games.length === 0 || savedPlayerNames.length === 0) {
+                const thead = document.getElementById('participationTableHead');
+                const tbody = document.getElementById('participationTableBody');
+                if (thead) thead.innerHTML = '';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="100" class="empty-state">Nessuna partita ancora</td></tr>';
+                return;
+            }
+            
+            // Build table header dynamically
+            const thead = document.getElementById('participationTableHead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Data</th>
+                    ${savedPlayerNames.map(name => {
+                        const parts = name.trim().split(/\s+/);
+                        return `<th>${parts.join('<br>')}</th>`;
+                    }).join('')}
+                </tr>
+            `;
+            
+            // Get all unique dates and sort them
+            const dates = [...new Set(games.map(g => g.date))].sort().reverse();
+            
+            // Build table body
+            const tbody = document.getElementById('participationTableBody');
+            tbody.innerHTML = dates.map(date => {
+                const game = games.find(g => g.date === date);
+                const dateStr = new Date(date).toLocaleDateString('it-IT');
+                
+                return `
+                    <tr>
+                        <td>${dateStr}</td>
+                        ${savedPlayerNames.map(playerName => {
+                            const result = game?.results?.find(r => r.playerName === playerName);
+                            if (result) {
+                                const maxPosition = Math.max(...game.results.map(r => r.position));
+                                const badgeClass =  result.position === maxPosition ? 'last-place' : 
+                                                    result.position === 1 ? 'first-place' :
+                                                    result.position === 2 ? 'second-place' :
+                                                    result.position === 3 ? 'third-place' : 
+                                                    'played';
+                                return `<td><span class="participation-badge ${badgeClass}">${result.position}°</span></td>`;
+                            } else {
+                                return `<td><span class="participation-badge not-played">NA</span></td>`;
+                            }
+                        }).join('')}
+                    </tr>
+                `;
+            }).join('');
         }
 
         function updateRelativePodiumStats(games) {
